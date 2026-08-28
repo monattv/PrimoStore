@@ -2,307 +2,301 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <meta name="theme-color" content="#111827">
     <title>Cashier Simulator</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="app">
+<div id="app">
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div>
+            <div class="game-title">CASHIER</div>
+            <div class="game-subtitle">Simulator</div>
+        </div>
 
-        <div class="brand">
-            <div class="brand-icon">₿</div>
+        <div class="top-actions">
+            <button class="icon-btn" id="soundBtn">🔊</button>
+            <button class="icon-btn" id="themeBtn">🌙</button>
+            <button class="icon-btn" id="settingsBtn">⚙️</button>
+        </div>
+    </header>
+
+
+    <!-- STATS -->
+    <section class="stats">
+        <div class="stat">
+            <span>💰</span>
             <div>
-                <h1>Cashier</h1>
-                <span>Simulator</span>
+                <small>INCASSO</small>
+                <strong id="moneyStat">€0,00</strong>
             </div>
         </div>
 
-        <nav class="navigation">
+        <div class="stat">
+            <span>⭐</span>
+            <div>
+                <small>SODDISFAZIONE</small>
+                <strong id="ratingStat">100%</strong>
+            </div>
+        </div>
 
-            <button class="nav-item active" data-page="register">
-                <span>🛒</span>
-                <label>Cassa</label>
-            </button>
+        <div class="stat">
+            <span>👥</span>
+            <div>
+                <small>CLIENTI</small>
+                <strong id="customersStat">0</strong>
+            </div>
+        </div>
+    </section>
 
-            <button class="nav-item" data-page="inventory">
-                <span>📦</span>
-                <label>Inventario</label>
-            </button>
 
-            <button class="nav-item" data-page="stats">
-                <span>📊</span>
-                <label>Statistiche</label>
-            </button>
+    <!-- CLIENTE -->
+    <main>
 
-            <button class="nav-item" data-page="settings">
-                <span>⚙️</span>
-                <label>Impostazioni</label>
-            </button>
+        <section class="customer-card">
 
-        </nav>
+            <div class="customer-head">
+                <div class="customer-avatar" id="customerAvatar">👨</div>
 
-        <div class="sidebar-bottom">
+                <div class="customer-info">
+                    <h2 id="customerName">In attesa...</h2>
+                    <p id="customerMessage">Il prossimo cliente sta arrivando.</p>
+                </div>
 
-            <div class="cash-status">
-                <span class="status-dot"></span>
-                <div>
-                    <small>Stato cassa</small>
-                    <strong>Operativa</strong>
+                <div class="waiting-badge" id="waitingBadge">
+                    <span></span>
+                    IN CODA
                 </div>
             </div>
 
-            <div class="version">
-                Cashier Simulator v1.0
+
+            <!-- TIMER -->
+            <div class="customer-timer">
+                <div class="timer-bar">
+                    <div id="timerProgress"></div>
+                </div>
+
+                <div class="timer-text">
+                    <span>Tempo cliente</span>
+                    <strong id="timer">--</strong>
+                </div>
             </div>
 
-        </div>
 
-    </aside>
+            <!-- CARRELLO -->
+            <div class="cart-section">
 
+                <div class="section-title">
+                    <span>🛒</span>
+                    Prodotti
+                </div>
 
-    <!-- MAIN -->
-    <main class="main">
-
-        <!-- TOPBAR -->
-        <header class="topbar">
-
-            <div>
-                <h2 id="page-title">Cassa</h2>
-                <p id="page-description">Gestisci la vendita e completa gli ordini.</p>
-            </div>
-
-            <div class="top-actions">
-
-                <div class="money-box">
-                    <span>💰</span>
-                    <div>
-                        <small>Incasso</small>
-                        <strong id="total-earned">€ 0,00</strong>
+                <div id="productsList" class="products-list">
+                    <div class="empty-products">
+                        Nessun cliente al momento
                     </div>
                 </div>
 
-                <button class="icon-button" id="save-button" title="Salva">
-                    💾
+            </div>
+
+
+            <!-- TOTALE -->
+            <div class="total-box">
+                <span>TOTALE</span>
+                <strong id="totalPrice">€0,00</strong>
+            </div>
+
+
+            <!-- PAGAMENTO -->
+            <div id="paymentArea" class="payment-area hidden">
+
+                <div class="section-title">
+                    <span>💳</span>
+                    Pagamento
+                </div>
+
+                <div id="paymentInfo" class="payment-info"></div>
+
+                <button id="paymentAction" class="main-action">
+                    Attendi pagamento
                 </button>
 
             </div>
 
-        </header>
-
-
-        <!-- REGISTER PAGE -->
-        <section class="page active-page" id="register-page">
-
-            <div class="register-layout">
-
-                <!-- PRODUCTS -->
-                <div class="products-area">
-
-                    <div class="section-header">
-
-                        <div>
-                            <h3>Prodotti</h3>
-                            <p>Seleziona un prodotto per aggiungerlo alla vendita.</p>
-                        </div>
-
-                        <div class="search-box">
-                            <span>🔎</span>
-                            <input
-                                type="text"
-                                id="product-search"
-                                placeholder="Cerca prodotto..."
-                            >
-                        </div>
-
-                    </div>
-
-
-                    <div class="category-list">
-
-                        <button class="category active" data-category="all">
-                            Tutti
-                        </button>
-
-                        <button class="category" data-category="food">
-                            Alimentari
-                        </button>
-
-                        <button class="category" data-category="drink">
-                            Bevande
-                        </button>
-
-                        <button class="category" data-category="house">
-                            Casa
-                        </button>
-
-                        <button class="category" data-category="other">
-                            Altro
-                        </button>
-
-                    </div>
-
-
-                    <div class="products-grid" id="products-grid">
-                        <!-- Prodotti generati da JavaScript -->
-                    </div>
-
-                </div>
-
-
-                <!-- CART -->
-                <aside class="cart-panel">
-
-                    <div class="cart-header">
-
-                        <div>
-                            <h3>Ordine corrente</h3>
-                            <span id="cart-count">0 prodotti</span>
-                        </div>
-
-                        <button class="clear-button" id="clear-cart">
-                            Svuota
-                        </button>
-
-                    </div>
-
-
-                    <div class="cart-items" id="cart-items">
-
-                        <div class="empty-cart">
-                            <div>🛒</div>
-                            <h4>Carrello vuoto</h4>
-                            <p>Aggiungi dei prodotti per iniziare.</p>
-                        </div>
-
-                    </div>
-
-
-                    <div class="cart-summary">
-
-                        <div class="summary-row">
-                            <span>Subtotale</span>
-                            <strong id="subtotal">€ 0,00</strong>
-                        </div>
-
-                        <div class="summary-row">
-                            <span>IVA <small>(22%)</small></span>
-                            <strong id="tax">€ 0,00</strong>
-                        </div>
-
-                        <div class="summary-row discount-row">
-                            <span>Sconto</span>
-                            <strong id="discount">- € 0,00</strong>
-                        </div>
-
-                        <div class="summary-divider"></div>
-
-                        <div class="total-row">
-                            <span>Totale</span>
-                            <strong id="grand-total">€ 0,00</strong>
-                        </div>
-
-                    </div>
-
-
-                    <button class="checkout-button" id="checkout-button">
-                        <span>💳</span>
-                        Procedi al pagamento
-                    </button>
-
-                </aside>
-
-            </div>
-
         </section>
 
 
-        <!-- INVENTORY PAGE -->
-        <section class="page" id="inventory-page">
+        <!-- REGISTRAZIONE / CASSA -->
+        <section class="register">
 
-            <div class="page-card">
-
-                <div class="section-header">
-                    <div>
-                        <h3>Inventario</h3>
-                        <p>Gestisci i prodotti disponibili nel negozio.</p>
-                    </div>
-
-                    <button class="primary-button" id="add-product">
-                        ＋ Nuovo prodotto
-                    </button>
-                </div>
-
-                <div class="inventory-table">
-
-                    <div class="table-row table-head">
-                        <span>Prodotto</span>
-                        <span>Categoria</span>
-                        <span>Prezzo</span>
-                        <span>Stock</span>
-                        <span>Stato</span>
-                    </div>
-
-                    <div id="inventory-list">
-                        <!-- Generato da JS -->
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- STATS PAGE -->
-        <section class="page" id="stats-page">
-
-            <div class="stats-grid">
-
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <span>Incasso totale</span>
-                    <strong id="stats-earned">€ 0,00</strong>
-                    <small>Da quando hai iniziato</small>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">🧾</div>
-                    <span>Vendite</span>
-                    <strong id="stats-sales">0</strong>
-                    <small>Transazioni completate</small>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">🛒</div>
-                    <span>Prodotti venduti</span>
-                    <strong id="stats-products">0</strong>
-                    <small>Unità vendute</small>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
-                    <span>Valutazione</span>
-                    <strong>100%</strong>
-                    <small>Servizio clienti</small>
-                </div>
-
-            </div>
-
-
-            <div class="page-card chart-placeholder">
-
+            <div class="register-header">
                 <div>
-                    <h3>Andamento incassi</h3>
-                    <p>Il grafico verrà aggiunto nella prossima versione.</p>
+                    <span class="register-label">REGISTRATORE DI CASSA</span>
+                    <h2 id="registerStatus">Pronto</h2>
                 </div>
 
-                <div class="fake-chart">
-                    <div class="chart-line"></div>
+                <div class="register-light" id="registerLight"></div>
+            </div>
+
+
+            <!-- DISPLAY -->
+            <div class="register-display">
+
+                <div class="display-label">
+                    RESTO DA DARE
+                </div>
+
+                <div id="changeRequired" class="display-number">
+                    €0,00
+                </div>
+
+                <div class="display-divider"></div>
+
+                <div class="display-small">
+                    RESTO COMPOSTO
+                </div>
+
+                <div id="changeGiven" class="display-given">
+                    €0,00
+                </div>
+
+                <div id="changeMessage" class="display-message">
+                    Attendi un pagamento in contanti
+                </div>
+
+            </div>
+
+
+            <!-- CASSETTO -->
+            <div class="cash-drawer" id="cashDrawer">
+
+                <div class="drawer-top">
+
+                    <div class="drawer-lock">
+                        🔒
+                    </div>
+
+                    <div class="drawer-title">
+                        CASSETTO CONTANTI
+                    </div>
+
+                    <div class="drawer-led"></div>
+
+                </div>
+
+
+                <!-- BANCONOTE -->
+                <div class="cash-section">
+
+                    <div class="cash-section-title">
+                        BANCONOTE
+                    </div>
+
+                    <div class="banknote-row">
+
+                        <button class="cash-item banknote b5"
+                                data-value="5">
+                            <span>€5</span>
+                        </button>
+
+                        <button class="cash-item banknote b10"
+                                data-value="10">
+                            <span>€10</span>
+                        </button>
+
+                        <button class="cash-item banknote b20"
+                                data-value="20">
+                            <span>€20</span>
+                        </button>
+
+                        <button class="cash-item banknote b50"
+                                data-value="50">
+                            <span>€50</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- MONETE -->
+                <div class="cash-section coins-section">
+
+                    <div class="cash-section-title">
+                        MONETE
+                    </div>
+
+                    <div class="coin-row">
+
+                        <button class="cash-item coin coin2"
+                                data-value="2">
+                            <span>2€</span>
+                        </button>
+
+                        <button class="cash-item coin coin1"
+                                data-value="1">
+                            <span>1€</span>
+                        </button>
+
+                        <button class="cash-item coin coin50"
+                                data-value="0.50">
+                            <span>50c</span>
+                        </button>
+
+                        <button class="cash-item coin coin20"
+                                data-value="0.20">
+                            <span>20c</span>
+                        </button>
+
+                        <button class="cash-item coin coin10"
+                                data-value="0.10">
+                            <span>10c</span>
+                        </button>
+
+                        <button class="cash-item coin coin5"
+                                data-value="0.05">
+                            <span>5c</span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESTO SELEZIONATO -->
+                <div class="selected-cash">
+
+                    <div class="selected-title">
+                        RESTO SELEZIONATO
+                    </div>
+
+                    <div id="selectedItems" class="selected-items">
+                        <span class="no-selected">
+                            Tocca banconote o monete
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="drawer-controls">
+
+                    <button id="clearChange" class="secondary-btn">
+                        ↶ Svuota
+                    </button>
+
+                    <button id="confirmChange" class="confirm-btn" disabled>
+                        CONSEGNA RESTO
+                    </button>
+
                 </div>
 
             </div>
@@ -310,220 +304,183 @@
         </section>
 
 
-        <!-- SETTINGS PAGE -->
-        <section class="page" id="settings-page">
-
-            <div class="settings-layout">
-
-                <div class="page-card">
-
-                    <div class="section-header">
-                        <div>
-                            <h3>Impostazioni</h3>
-                            <p>Personalizza la tua esperienza di gioco.</p>
-                        </div>
-                    </div>
-
-
-                    <div class="settings-section">
-
-                        <h4>🎨 Aspetto</h4>
-
-                        <div class="setting-row">
-
-                            <div>
-                                <strong>Tema scuro</strong>
-                                <span>Utilizza l'interfaccia scura.</span>
-                            </div>
-
-                            <label class="switch">
-                                <input type="checkbox" id="dark-mode" checked>
-                                <span></span>
-                            </label>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="settings-section">
-
-                        <h4>✨ Animazioni</h4>
-
-                        <div class="setting-row">
-
-                            <div>
-                                <strong>Animazioni interfaccia</strong>
-                                <span>Abilita transizioni e animazioni.</span>
-                            </div>
-
-                            <label class="switch">
-                                <input type="checkbox" id="animations" checked>
-                                <span></span>
-                            </label>
-
-                        </div>
-
-
-                        <div class="setting-row">
-
-                            <div>
-                                <strong>Effetti prodotto</strong>
-                                <span>Animazioni quando aggiungi prodotti.</span>
-                            </div>
-
-                            <label class="switch">
-                                <input type="checkbox" id="product-effects" checked>
-                                <span></span>
-                            </label>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="settings-section">
-
-                        <h4>🔊 Audio</h4>
-
-                        <div class="setting-row">
-
-                            <div>
-                                <strong>Suoni</strong>
-                                <span>Riproduci suoni durante le azioni.</span>
-                            </div>
-
-                            <label class="switch">
-                                <input type="checkbox" id="sounds" checked>
-                                <span></span>
-                            </label>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="page-card save-card">
-
-                    <h3>💾 Salvataggio</h3>
-
-                    <p>
-                        Gestisci i tuoi dati e trasferisci il salvataggio
-                        tra dispositivi.
-                    </p>
-
-                    <div class="save-buttons">
-
-                        <button class="secondary-button" id="export-save">
-                            📤 Esporta salvataggio
-                        </button>
-
-                        <button class="secondary-button" id="import-save-button">
-                            📥 Importa salvataggio
-                        </button>
-
-                        <input
-                            type="file"
-                            id="import-save"
-                            accept=".json"
-                            hidden
-                        >
-
-                        <button class="danger-button" id="reset-game">
-                            🗑️ Reset partita
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
+        <!-- NUOVO CLIENTE -->
+        <button id="nextCustomer" class="new-customer-btn hidden">
+            <span>👤</span>
+            PROSSIMO CLIENTE
+        </button>
 
     </main>
 
-</div>
 
-
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="payment-modal">
-
-    <div class="modal">
-
-        <button class="modal-close" id="close-payment">×</button>
-
-        <div class="modal-icon">💳</div>
-
-        <h2>Pagamento</h2>
-        <p>Seleziona il metodo di pagamento.</p>
-
-        <div class="payment-total">
-            <span>Totale da pagare</span>
-            <strong id="payment-total">€ 0,00</strong>
+    <!-- NOTIFICATION -->
+    <div id="notification" class="notification">
+        <div class="notification-icon">🔔</div>
+        <div>
+            <strong id="notificationTitle">Nuovo cliente</strong>
+            <span id="notificationText">Un cliente sta aspettando.</span>
         </div>
+    </div>
 
 
-        <div class="payment-methods">
+    <!-- RECEIPT -->
+    <div id="receiptOverlay" class="overlay hidden">
 
-            <button class="payment-method active" data-method="cash">
-                <span>💶</span>
-                <strong>Contanti</strong>
-            </button>
+        <div class="receipt-modal">
 
-            <button class="payment-method" data-method="card">
-                <span>💳</span>
-                <strong>Carta</strong>
-            </button>
+            <div class="receipt-paper">
 
-            <button class="payment-method" data-method="digital">
-                <span>📱</span>
-                <strong>Digitale</strong>
-            </button>
+                <div class="receipt-shop">
+                    CASHIER<br>
+                    <span>SIMULATOR</span>
+                </div>
 
-        </div>
+                <div class="receipt-line"></div>
 
+                <div id="receiptProducts"></div>
 
-        <div class="cash-input" id="cash-input">
+                <div class="receipt-line"></div>
 
-            <label>Contanti ricevuti</label>
+                <div class="receipt-total">
+                    <span>TOTALE</span>
+                    <strong id="receiptTotal">€0,00</strong>
+                </div>
 
-            <div class="money-input">
-                <span>€</span>
-                <input
-                    type="number"
-                    id="cash-received"
-                    min="0"
-                    step="0.01"
-                    placeholder="0,00"
-                >
+                <div class="receipt-payment" id="receiptPayment"></div>
+
+                <div class="receipt-line"></div>
+
+                <div class="receipt-thanks">
+                    Grazie e arrivederci!<br>
+                    Torna presto ❤️
+                </div>
+
             </div>
 
-            <div class="change-row">
-                <span>Resto</span>
-                <strong id="change">€ 0,00</strong>
+            <button id="closeReceipt" class="receipt-button">
+                CONTINUA
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- SETTINGS -->
+    <div id="settingsOverlay" class="overlay hidden">
+
+        <div class="settings-modal">
+
+            <div class="modal-header">
+                <div>
+                    <small>CONFIGURAZIONE</small>
+                    <h2>Impostazioni</h2>
+                </div>
+
+                <button id="closeSettings" class="close-btn">×</button>
+            </div>
+
+
+            <div class="settings-option">
+
+                <div>
+                    <strong>🌙 Modalità scura</strong>
+                    <span>Riduce la luminosità dell'interfaccia.</span>
+                </div>
+
+                <button class="toggle" id="darkToggle">
+                    <span></span>
+                </button>
+
+            </div>
+
+
+            <div class="settings-option">
+
+                <div>
+                    <strong>✨ Animazioni</strong>
+                    <span>Animazioni della cassa e dell'interfaccia.</span>
+                </div>
+
+                <button class="toggle active" id="animationToggle">
+                    <span></span>
+                </button>
+
+            </div>
+
+
+            <div class="settings-option">
+
+                <div>
+                    <strong>🔊 Suoni</strong>
+                    <span>Suoni della cassa e notifiche.</span>
+                </div>
+
+                <button class="toggle active" id="soundToggle">
+                    <span></span>
+                </button>
+
+            </div>
+
+
+            <div class="settings-actions">
+
+                <button id="resetGame" class="danger-btn">
+                    🗑️ Azzera partita
+                </button>
+
             </div>
 
         </div>
 
+    </div>
 
-        <button class="confirm-payment" id="confirm-payment">
-            Conferma pagamento
-        </button>
+
+    <!-- POS -->
+    <div id="posOverlay" class="overlay hidden">
+
+        <div class="pos-machine">
+
+            <div class="pos-top">
+                <span>POS</span>
+                <span class="pos-dot"></span>
+            </div>
+
+            <div class="pos-screen">
+
+                <div class="pos-bank">BANCA</div>
+
+                <div class="pos-amount" id="posAmount">
+                    €0,00
+                </div>
+
+                <div id="posStatus" class="pos-status">
+                    Attesa carta...
+                </div>
+
+            </div>
+
+            <div class="pos-buttons">
+
+                <div></div>
+                <div></div>
+                <div></div>
+
+                <div></div>
+                <div></div>
+                <div></div>
+
+                <div class="pos-green"></div>
+                <div class="pos-yellow"></div>
+                <div class="pos-red"></div>
+
+            </div>
+
+        </div>
 
     </div>
 
 </div>
-
-
-<!-- NOTIFICATION -->
-<div class="notification" id="notification">
-    <span id="notification-icon">✓</span>
-    <span id="notification-text">Operazione completata</span>
-</div>
-
 
 <script src="script.js"></script>
 
