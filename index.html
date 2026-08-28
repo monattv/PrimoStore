@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">₿</div>
+            <div>
+                <h1>Cashier</h1>
+                <span>Simulator</span>
+            </div>
+        </div>
+
+        <nav class="navigation">
+
+            <button class="nav-item active" data-page="register">
+                <span>🛒</span>
+                <label>Cassa</label>
+            </button>
+
+            <button class="nav-item" data-page="inventory">
+                <span>📦</span>
+                <label>Inventario</label>
+            </button>
+
+            <button class="nav-item" data-page="stats">
+                <span>📊</span>
+                <label>Statistiche</label>
+            </button>
+
+            <button class="nav-item" data-page="settings">
+                <span>⚙️</span>
+                <label>Impostazioni</label>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="cash-status">
+                <span class="status-dot"></span>
+                <div>
+                    <small>Stato cassa</small>
+                    <strong>Operativa</strong>
+                </div>
+            </div>
+
+            <div class="version">
+                Cashier Simulator v1.0
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div>
+                <h2 id="page-title">Cassa</h2>
+                <p id="page-description">Gestisci la vendita e completa gli ordini.</p>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="money-box">
+                    <span>💰</span>
+                    <div>
+                        <small>Incasso</small>
+                        <strong id="total-earned">€ 0,00</strong>
+                    </div>
+                </div>
+
+                <button class="icon-button" id="save-button" title="Salva">
+                    💾
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- REGISTER PAGE -->
+        <section class="page active-page" id="register-page">
+
+            <div class="register-layout">
+
+                <!-- PRODUCTS -->
+                <div class="products-area">
+
+                    <div class="section-header">
+
+                        <div>
+                            <h3>Prodotti</h3>
+                            <p>Seleziona un prodotto per aggiungerlo alla vendita.</p>
+                        </div>
+
+                        <div class="search-box">
+                            <span>🔎</span>
+                            <input
+                                type="text"
+                                id="product-search"
+                                placeholder="Cerca prodotto..."
+                            >
+                        </div>
+
+                    </div>
+
+
+                    <div class="category-list">
+
+                        <button class="category active" data-category="all">
+                            Tutti
+                        </button>
+
+                        <button class="category" data-category="food">
+                            Alimentari
+                        </button>
+
+                        <button class="category" data-category="drink">
+                            Bevande
+                        </button>
+
+                        <button class="category" data-category="house">
+                            Casa
+                        </button>
+
+                        <button class="category" data-category="other">
+                            Altro
+                        </button>
+
+                    </div>
+
+
+                    <div class="products-grid" id="products-grid">
+                        <!-- Prodotti generati da JavaScript -->
+                    </div>
+
+                </div>
+
+
+                <!-- CART -->
+                <aside class="cart-panel">
+
+                    <div class="cart-header">
+
+                        <div>
+                            <h3>Ordine corrente</h3>
+                            <span id="cart-count">0 prodotti</span>
+                        </div>
+
+                        <button class="clear-button" id="clear-cart">
+                            Svuota
+                        </button>
+
+                    </div>
+
+
+                    <div class="cart-items" id="cart-items">
+
+                        <div class="empty-cart">
+                            <div>🛒</div>
+                            <h4>Carrello vuoto</h4>
+                            <p>Aggiungi dei prodotti per iniziare.</p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="cart-summary">
+
+                        <div class="summary-row">
+                            <span>Subtotale</span>
+                            <strong id="subtotal">€ 0,00</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>IVA <small>(22%)</small></span>
+                            <strong id="tax">€ 0,00</strong>
+                        </div>
+
+                        <div class="summary-row discount-row">
+                            <span>Sconto</span>
+                            <strong id="discount">- € 0,00</strong>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="total-row">
+                            <span>Totale</span>
+                            <strong id="grand-total">€ 0,00</strong>
+                        </div>
+
+                    </div>
+
+
+                    <button class="checkout-button" id="checkout-button">
+                        <span>💳</span>
+                        Procedi al pagamento
+                    </button>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+
+        <!-- INVENTORY PAGE -->
+        <section class="page" id="inventory-page">
+
+            <div class="page-card">
+
+                <div class="section-header">
+                    <div>
+                        <h3>Inventario</h3>
+                        <p>Gestisci i prodotti disponibili nel negozio.</p>
+                    </div>
+
+                    <button class="primary-button" id="add-product">
+                        ＋ Nuovo prodotto
+                    </button>
+                </div>
+
+                <div class="inventory-table">
+
+                    <div class="table-row table-head">
+                        <span>Prodotto</span>
+                        <span>Categoria</span>
+                        <span>Prezzo</span>
+                        <span>Stock</span>
+                        <span>Stato</span>
+                    </div>
+
+                    <div id="inventory-list">
+                        <!-- Generato da JS -->
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- STATS PAGE -->
+        <section class="page" id="stats-page">
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <span>Incasso totale</span>
+                    <strong id="stats-earned">€ 0,00</strong>
+                    <small>Da quando hai iniziato</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🧾</div>
+                    <span>Vendite</span>
+                    <strong id="stats-sales">0</strong>
+                    <small>Transazioni completate</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🛒</div>
+                    <span>Prodotti venduti</span>
+                    <strong id="stats-products">0</strong>
+                    <small>Unità vendute</small>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <span>Valutazione</span>
+                    <strong>100%</strong>
+                    <small>Servizio clienti</small>
+                </div>
+
+            </div>
+
+
+            <div class="page-card chart-placeholder">
+
+                <div>
+                    <h3>Andamento incassi</h3>
+                    <p>Il grafico verrà aggiunto nella prossima versione.</p>
+                </div>
+
+                <div class="fake-chart">
+                    <div class="chart-line"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- SETTINGS PAGE -->
+        <section class="page" id="settings-page">
+
+            <div class="settings-layout">
+
+                <div class="page-card">
+
+                    <div class="section-header">
+                        <div>
+                            <h3>Impostazioni</h3>
+                            <p>Personalizza la tua esperienza di gioco.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="settings-section">
+
+                        <h4>🎨 Aspetto</h4>
+
+                        <div class="setting-row">
+
+                            <div>
+                                <strong>Tema scuro</strong>
+                                <span>Utilizza l'interfaccia scura.</span>
+                            </div>
+
+                            <label class="switch">
+                                <input type="checkbox" id="dark-mode" checked>
+                                <span></span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="settings-section">
+
+                        <h4>✨ Animazioni</h4>
+
+                        <div class="setting-row">
+
+                            <div>
+                                <strong>Animazioni interfaccia</strong>
+                                <span>Abilita transizioni e animazioni.</span>
+                            </div>
+
+                            <label class="switch">
+                                <input type="checkbox" id="animations" checked>
+                                <span></span>
+                            </label>
+
+                        </div>
+
+
+                        <div class="setting-row">
+
+                            <div>
+                                <strong>Effetti prodotto</strong>
+                                <span>Animazioni quando aggiungi prodotti.</span>
+                            </div>
+
+                            <label class="switch">
+                                <input type="checkbox" id="product-effects" checked>
+                                <span></span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="settings-section">
+
+                        <h4>🔊 Audio</h4>
+
+                        <div class="setting-row">
+
+                            <div>
+                                <strong>Suoni</strong>
+                                <span>Riproduci suoni durante le azioni.</span>
+                            </div>
+
+                            <label class="switch">
+                                <input type="checkbox" id="sounds" checked>
+                                <span></span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="page-card save-card">
+
+                    <h3>💾 Salvataggio</h3>
+
+                    <p>
+                        Gestisci i tuoi dati e trasferisci il salvataggio
+                        tra dispositivi.
+                    </p>
+
+                    <div class="save-buttons">
+
+                        <button class="secondary-button" id="export-save">
+                            📤 Esporta salvataggio
+                        </button>
+
+                        <button class="secondary-button" id="import-save-button">
+                            📥 Importa salvataggio
+                        </button>
+
+                        <input
+                            type="file"
+                            id="import-save"
+                            accept=".json"
+                            hidden
+                        >
+
+                        <button class="danger-button" id="reset-game">
+                            🗑️ Reset partita
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="payment-modal">
+
+    <div class="modal">
+
+        <button class="modal-close" id="close-payment">×</button>
+
+        <div class="modal-icon">💳</div>
+
+        <h2>Pagamento</h2>
+        <p>Seleziona il metodo di pagamento.</p>
+
+        <div class="payment-total">
+            <span>Totale da pagare</span>
+            <strong id="payment-total">€ 0,00</strong>
+        </div>
+
+
+        <div class="payment-methods">
+
+            <button class="payment-method active" data-method="cash">
+                <span>💶</span>
+                <strong>Contanti</strong>
+            </button>
+
+            <button class="payment-method" data-method="card">
+                <span>💳</span>
+                <strong>Carta</strong>
+            </button>
+
+            <button class="payment-method" data-method="digital">
+                <span>📱</span>
+                <strong>Digitale</strong>
+            </button>
+
+        </div>
+
+
+        <div class="cash-input" id="cash-input">
+
+            <label>Contanti ricevuti</label>
+
+            <div class="money-input">
+                <span>€</span>
+                <input
+                    type="number"
+                    id="cash-received"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                >
+            </div>
+
+            <div class="change-row">
+                <span>Resto</span>
+                <strong id="change">€ 0,00</strong>
+            </div>
+
+        </div>
+
+
+        <button class="confirm-payment" id="confirm-payment">
+            Conferma pagamento
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification">
+    <span id="notification-icon">✓</span>
+    <span id="notification-text">Operazione completata</span>
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
