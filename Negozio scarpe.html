@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scarpe</title>
+<style>
+:root{--bg:#fff;--fg:#111;--mu:#777;--ln:#e5e5e5;--sf:#f6f6f6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--fg:#f2f2f2;--mu:#888;--ln:#2a2a2a;--sf:#1a1a1a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111;--fg:#f2f2f2;--mu:#888;--ln:#2a2a2a;--sf:#1a1a1a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 -apple-system,"Helvetica Neue",Arial,sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+h1{font-size:18px;font-weight:600;margin:0;letter-spacing:.5px}
+button,input{font:inherit;color:inherit}
+button{background:none;border:1px solid var(--fg);padding:8px 14px;cursor:pointer}
+button:hover{background:var(--fg);color:var(--bg)}
+button.l{border:none;padding:0;text-decoration:underline;color:var(--mu)}
+button.l:hover{background:none;color:var(--fg)}
+input{width:100%;padding:10px;border:1px solid var(--ln);background:var(--bg);margin:0 0 10px}
+label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:24px}
+.ph{aspect-ratio:1;background:var(--sf);display:flex;align-items:center;justify-content:center;color:var(--mu);font-size:12px;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:cover}
+.n{margin-top:8px;display:flex;justify-content:space-between;gap:8px}
+.m{color:var(--mu);font-size:13px}
+.box{max-width:340px;margin:12vh auto 0}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ln)}
+.row .t{width:56px;height:56px;flex:none;background:var(--sf);overflow:hidden}
+.row .t img{width:100%;height:100%;object-fit:cover}
+.row .i{flex:1;min-width:0}
+.form{border:1px solid var(--ln);padding:16px;margin-bottom:28px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.chk input{width:auto;margin:0}
+.out{opacity:.45}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// ====== CONFIGURAZIONE ======
+var ADMIN_PHONE = "3330000000";   // il TUO numero: chi entra con questo numero vede la dashboard
+var SHOP_PHONE  = "393330000000"; // numero WhatsApp per gli ordini (con prefisso, senza +)
+var SHOP_NAME   = "SCARPE";
+// ============================
+
+var S = {user:null, shoes:[], view:"shop", edit:null, photo:""};
+function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("Memoria piena: usa foto più piccole")}}
+S.shoes = ld("shoes",[]); S.user = ld("user",null);
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function isAdmin(){return S.user && S.user.phone===ADMIN_PHONE}
+function $(id){return document.getElementById(id)}
+
+function render(){
+  var a=$("app");
+  if(!S.user){
+    a.innerHTML='<div class="box"><h1>'+SHOP_NAME+'</h1><p class="m">Accedi per continuare</p>'+
+    '<label>Nome</label><input id="fn" autocomplete="given-name">'+
+    '<label>Cognome</label><input id="ln" autocomplete="family-name">'+
+    '<label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel">'+
+    '<button onclick="login()">Entra</button></div>';
+    return;
+  }
+  var nav='<header><h1>'+SHOP_NAME+'</h1><div class="m">'+esc(S.user.first)+' '+esc(S.user.last)+' · '+
+    (isAdmin()?'<button class="l" onclick="go(\''+(S.view==="shop"?"admin":"shop")+'\')">'+(S.view==="shop"?"Dashboard":"Negozio")+'</button> · ':'')+
+    '<button class="l" onclick="logout()">Esci</button></div></header>';
+  a.innerHTML = nav + (S.view==="admin"&&isAdmin() ? admin() : shop());
+}
+
+function shop(){
+  if(!S.shoes.length) return '<p class="m">Nessuna scarpa disponibile.</p>';
+  return '<div class="grid">'+S.shoes.map(function(s){
+    var msg=encodeURIComponent("Ciao, sono "+S.user.first+" "+S.user.last+" ("+S.user.phone+"). Vorrei ordinare: "+s.name+(s.sizes?" – taglia ":"")+"");
+    return '<div class="'+(s.avail?'':'out')+'"><div class="ph">'+(s.photo?'<img src="'+s.photo+'" alt="">':'nessuna foto')+'</div>'+
+    '<div class="n"><span>'+esc(s.name)+'</span><span>€ '+Number(s.price).toFixed(2)+'</span></div>'+
+    '<div class="m">'+(s.sizes?'Taglie: '+esc(s.sizes):'')+'</div>'+
+    '<div style="margin-top:8px">'+(s.avail?'<a href="https://wa.me/'+SHOP_PHONE+'?text='+msg+'" target="_blank" rel="noopener"><button>Ordina</button></a>':'<span class="m">Non disponibile</span>')+'</div></div>';
+  }).join('')+'</div>';
+}
+
+function admin(){
+  var e=S.edit!==null?S.shoes.filter(function(x){return x.id===S.edit})[0]:null;
+  e=e||{name:"",price:"",sizes:"",avail:true};
+  var f='<div class="form"><div class="m" style="margin-bottom:10px">'+(S.edit!==null?"Modifica scarpa":"Nuova scarpa")+'</div>'+
+  '<label>Nome</label><input id="nm" value="'+esc(e.name)+'">'+
+  '<div class="two"><div><label>Prezzo (€)</label><input id="pr" type="number" step="0.01" value="'+esc(e.price)+'"></div>'+
+  '<div><label>Taglie (es. 40, 41, 42)</label><input id="sz" value="'+esc(e.sizes)+'"></div></div>'+
+  '<label>Foto</label><input id="fo" type="file" accept="image/*" onchange="pick(this)">'+
+  (S.photo?'<div class="row" style="border:none"><div class="t"><img src="'+S.photo+'" alt=""></div><button class="l" onclick="S.photo=\'\';render()">Rimuovi foto</button></div>':'')+
+  '<div class="chk"><input id="av" type="checkbox" '+(e.avail?'checked':'')+'><label style="margin:0">Disponibile</label></div>'+
+  '<button onclick="save()">Salva</button> '+(S.edit!==null?'<button class="l" onclick="S.edit=null;S.photo=\'\';render()">Annulla</button>':'')+'</div>';
+  var l=S.shoes.map(function(s){
+    return '<div class="row"><div class="t">'+(s.photo?'<img src="'+s.photo+'" alt="">':'')+'</div>'+
+    '<div class="i">'+esc(s.name)+'<div class="m">€ '+Number(s.price).toFixed(2)+' · '+(s.avail?'disponibile':'esaurita')+'</div></div>'+
+    '<button class="l" onclick="tog('+s.id+')">'+(s.avail?'Esaurita':'Disponibile')+'</button>'+
+    '<button class="l" onclick="ed('+s.id+')">Modifica</button>'+
+    '<button class="l" onclick="del('+s.id+')">Elimina</button></div>';
+  }).join('');
+  return f+(l||'<p class="m">Nessuna scarpa. Aggiungine una sopra.</p>');
+}
+
+function login(){
+  var f=$("fn").value.trim(),l=$("ln").value.trim(),p=$("ph").value.replace(/[\s\-+]/g,"");
+  if(!f||!l||p.length<8){alert("Inserisci nome, cognome e un numero valido");return}
+  S.user={first:f,last:l,phone:p.replace(/^39(?=3\d{9}$)/,"")}; sv("user",S.user); S.view="shop"; render();
+}
+function logout(){S.user=null;try{localStorage.removeItem("user")}catch(e){} render()}
+function go(v){S.view=v;S.edit=null;S.photo="";render()}
+function pick(inp){
+  var file=inp.files[0]; if(!file)return;
+  var r=new FileReader();
+  r.onload=function(){var im=new Image();im.onload=function(){
+    var m=700,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement("canvas");
+    c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    S.photo=c.toDataURL("image/jpeg",.78);keep();render()};im.src=r.result};
+  r.readAsDataURL(file);
+}
+function keep(){S._d={nm:$("nm")&&$("nm").value,pr:$("pr")&&$("pr").value,sz:$("sz")&&$("sz").value}}
+function save(){
+  var n=$("nm").value.trim(),p=parseFloat($("pr").value);
+  if(!n||isNaN(p)){alert("Nome e prezzo obbligatori");return}
+  var o={name:n,price:p,sizes:$("sz").value.trim(),avail:$("av").checked,photo:S.photo};
+  if(S.edit!==null){S.shoes=S.shoes.map(function(s){return s.id===S.edit?Object.assign({id:s.id},o):s})}
+  else{o.id=Date.now();S.shoes.unshift(o)}
+  sv("shoes",S.shoes);S.edit=null;S.photo="";render();
+}
+function ed(id){S.edit=id;S.photo=S.shoes.filter(function(s){return s.id===id})[0].photo||"";render();window.scrollTo(0,0)}
+function del(id){if(confirm("Eliminare questa scarpa?")){S.shoes=S.shoes.filter(function(s){return s.id!==id});sv("shoes",S.shoes);render()}}
+function tog(id){S.shoes.forEach(function(s){if(s.id===id)s.avail=!s.avail});sv("shoes",S.shoes);render()}
+render();
+</script>
+</body>
+</html>
