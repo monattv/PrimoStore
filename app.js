@@ -11,7 +11,7 @@ var SHOP_NAME = "Primo-Store";
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth(), db = firebase.firestore(), FV = firebase.firestore.FieldValue;
-var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false};
+var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false, sel:{}};
 try { S.user = JSON.parse(localStorage.getItem("user")); S.cart = JSON.parse(localStorage.getItem("cart")) || []; } catch (e) {}
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
@@ -32,6 +32,9 @@ auth.onAuthStateChanged(function (u) {
   R(); menuR(); cartR();
 });
 
+var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
+var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.</div>';
+
 // ---------- schermate ----------
 function R() {
   var a = $("app"); document.body.classList.toggle("in", !!S.user);
@@ -46,7 +49,7 @@ function R() {
   var n = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
   var top = '<header><button class="ic" onclick="openM()">☰</button><h1>' + SHOP_NAME + '</h1><span class="hello">Ciao, ' + esc(S.user.first) + '</span><span class="sp"></span>' +
     (S.admin ? '<button class="l" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Negozio") + '</button>' : '') +
-    '<button class="ic" onclick="openC()">Carrello<b id="bd">' + n + '</b></button><button class="l" onclick="logout()">Esci</button></header>';
+    '<button class="ic" id="cbtn" onclick="openC()">Carrello<b id="bd">' + n + '</b></button><button class="l" onclick="logout()">Esci</button></header>';
   a.innerHTML = top + (S.view === "admin" && S.admin ? admin() : shopH());
 }
 
@@ -54,14 +57,14 @@ function shopH() {
   if (!S.ready) return '<p class="m">Caricamento…</p>';
   var c = S.cats.filter(function (x) { return x.id === S.cat; })[0];
   var list = c ? S.shoes.filter(function (s) { return c.ids.indexOf(s.id) > -1; }) : S.shoes;
-  var h = '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>';
+  var h = '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>' + NOTE;
   if (!list.length) return h + '<p class="m">Nessuna scarpa qui per ora.</p>';
   return h + '<div class="grid">' + list.map(function (s, i) {
     var sz = (s.sizes || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
     return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 70) + 'ms"><div class="ph">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "nessuna foto") + '</div>' +
       '<div class="n"><span>' + esc(s.name) + '</span><span>€ ' + Number(s.price).toFixed(2) + '</span></div>' +
-      (s.avail ? (sz.length ? '<select id="sz_' + s.id + '"><option value="">Taglia</option>' + sz.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join("") + '</select>' : '<div style="height:8px"></div>') +
-        '<button onclick="add(\'' + s.id + '\')">Aggiungi al carrello</button>' : '<div class="m">Non disponibile</div>') + '</div>';
+      (s.avail ? (sz.length ? '<div class="sizes" id="sz_' + s.id + '">' + sz.map(function (x) { return '<button class="sq ' + (S.sel[s.id] === x ? "on" : "") + '" onclick="selSz(\'' + s.id + '\',this,\'' + esc(x) + '\')">' + esc(x) + '</button>'; }).join("") + '</div>' : '<div style="height:8px"></div>') +
+        '<button class="go" onclick="add(\'' + s.id + '\',this)"><span class="lb">Aggiungi al carrello</span>' + VAN + '</button>' : '<div class="m">Non disponibile</div>') + '</div>';
   }).join("") + '</div>';
 }
 
@@ -112,17 +115,28 @@ function cartR() {
   var msg = encodeURIComponent("Ciao, sono " + u.first + " " + u.last + " (" + u.phone + "). Vorrei ordinare:\n" + lines.join("\n") + "\nTotale: € " + tot.toFixed(2));
   $("cart").innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b>Carrello</b><button class="l" onclick="closeAll()">Chiudi</button></div>' +
     (rows || '<p class="m">Il carrello è vuoto.</p>') +
-    (rows ? '<div class="tot"><span>Totale</span><b>€ ' + tot.toFixed(2) + '</b></div><a class="wa" href="https://wa.me/' + SHOP_PHONE + '?text=' + msg + '" target="_blank" rel="noopener">Ordina su WhatsApp</a><p class="m" style="text-align:center">Il pagamento si concorda in chat.</p>' : '');
+    (rows ? '<div class="tot"><span>Totale</span><b>€ ' + tot.toFixed(2) + '</b></div><a class="wa" href="https://wa.me/' + SHOP_PHONE + '?text=' + msg + '" target="_blank" rel="noopener">Ordina su WhatsApp</a><p class="m" style="text-align:center">Colori, varianti e pagamento si concordano in chat.</p>' : '');
   try { localStorage.setItem("cart", JSON.stringify(S.cart)); } catch (e) {}
   var b = $("bd"); if (b) b.textContent = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
 }
-function add(id) {
-  var sel = $("sz_" + id), size = sel ? sel.value : "";
-  if (sel && !size) { toast("Scegli la taglia"); return; }
+function selSz(id, el, v) { S.sel[id] = v; var p = el.parentNode.children; for (var i = 0; i < p.length; i++) p[i].classList.remove("on"); el.classList.add("on"); }
+function add(id, btn) {
+  var size = S.sel[id] || "";
+  if ($("sz_" + id) && !size) { toast("Scegli la taglia"); return; }
   var f = S.cart.filter(function (c) { return c.id === id && c.size === size; })[0];
   if (f) f.q++; else S.cart.push({id:id, size:size, q:1});
-  cartR(); toast("Aggiunto al carrello");
-  var b = $("bd"); if (b) { b.classList.remove("b"); void b.offsetWidth; b.classList.add("b"); }
+  cartR(); toast("Aggiunto al carrello"); fly(btn);
+}
+function fly(b) {
+  b.classList.remove("run"); void b.offsetWidth; b.classList.add("run");
+  var t = $("cbtn"); if (!t) return;
+  var a = b.getBoundingClientRect(), c = t.getBoundingClientRect(), p = document.createElement("div");
+  p.className = "pk"; p.style.left = (a.left + a.width / 2 - 9) + "px"; p.style.top = a.top + "px"; document.body.appendChild(p);
+  var dx = c.left + c.width / 2 - a.left - a.width / 2, dy = c.top + c.height / 2 - a.top - 9;
+  p.animate([{transform:"translate(0,0) scale(1)", opacity:0, offset:0}, {transform:"translate(0,-14px) scale(1)", opacity:1, offset:.2},
+    {transform:"translate(" + dx + "px," + dy + "px) scale(.3)", opacity:.3, offset:1}], {duration:900, delay:700, easing:"ease-in", fill:"both"}).onfinish = function () {
+    p.remove(); t.animate([{transform:"scale(1)"}, {transform:"scale(1.12)"}, {transform:"scale(1)"}], {duration:350});
+    var g = $("bd"); if (g) { g.classList.remove("b"); void g.offsetWidth; g.classList.add("b"); } };
 }
 function qty(i, d) { S.cart[i].q += d; if (S.cart[i].q < 1) S.cart.splice(i, 1); cartR(); R(); }
 function toast(t) { var e = $("toast"); e.textContent = t; e.className = "s"; clearTimeout(toast.t); toast.t = setTimeout(function () { e.className = ""; }, 1800); }
