@@ -108,3 +108,18 @@ body:not(.in) aside,body:not(.in) #ov{display:none}
 @keyframes drive{0%{left:-40px;opacity:1}100%{left:calc(100% + 10px);opacity:1}}
 .pk{position:fixed;z-index:70;width:18px;height:18px;background:#d9d9d9;border-radius:3px;pointer-events:none;opacity:0}
 .pk::after{content:"";position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--bl)}
+/* telefono: 3 prodotti per fila */
+@media (max-width:600px){
+  main{padding:14px 12px 60px}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 8px}
+  .ph{border-radius:8px}
+  .n{flex-direction:column;gap:0;margin:6px 0 2px;font-size:12px;line-height:1.3}
+  .n span:last-child{color:var(--mu)}
+  .sizes{gap:4px;margin:6px 0}
+  .card .sq{min-width:26px;padding:4px 5px;font-size:11px}
+  .card button.go{padding:7px 4px;font-size:11px;line-height:1.2;border-radius:6px}
+  .van{width:22px;height:15px;margin-top:-7px}
+  .card:hover{transform:none}
+  .card .m{font-size:11px}
+  .ct{margin-bottom:12px}
+}
