@@ -247,7 +247,13 @@ function writeSVG(t, step, f0) {
   return '<svg class="wr" viewBox="0 0 ' + (x + 30 + fw).toFixed(1) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
 }
 function hi() {
-  var h = $("hi"), t = "Benvenuto, " + S.user.first;
+  var firstName = S.user.first ? S.user.first.trim() : "";
+  var lastChar = firstName.slice(-1).toLowerCase();
+  
+  // Se il nome finisce con 'a', usa "Benvenuta", altrimenti "Benvenuto"
+  var welcomeText = (lastChar === 'a') ? "Benvenuta" : "Benvenuto";
+  
+  var h = $("hi"), t = welcomeText + ", " + firstName;
   var go = function () {
     var dur = t.length * 110 + 2800;
     h.innerHTML = writeSVG(t, .11); h.style.animationDuration = dur + "ms"; h.className = ""; void h.offsetWidth; h.className = "show";
