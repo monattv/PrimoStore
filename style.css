@@ -23,7 +23,6 @@ label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes glow{0%,100%{text-shadow:0 0 8px rgba(122,31,47,.15)}50%{text-shadow:0 0 22px rgba(122,31,47,.4)}}
-@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-50px) scale(1.2)}}
 @keyframes bump{50%{transform:scale(1.4)}}
 @keyframes hi{0%{opacity:0}8%,80%{opacity:1}100%{opacity:0}}
 @keyframes write{to{clip-path:inset(-20% 0 -20% 0)}}
@@ -33,11 +32,6 @@ label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 @keyframes write{to{clip-path:inset(-20% 0 -20% 0)}}
 @keyframes outro{to{opacity:0}}
 /* accesso */
-.bg{position:fixed;inset:0;overflow:hidden;z-index:-1;background:linear-gradient(160deg,#fff,#f7f4f4)}
-.bg i{position:absolute;width:42vmax;height:42vmax;border-radius:50%;filter:blur(90px);animation:float 12s ease-in-out infinite}
-.bg i:nth-child(1){background:#9a9094;opacity:.18;top:-15%;left:-10%}
-.bg i:nth-child(2){background:#cfc6c9;opacity:.35;bottom:-20%;right:-10%;animation-delay:-4s}
-.bg i:nth-child(3){background:#7a1f2f;opacity:.07;top:35%;left:40%;animation-delay:-8s}
 .box{max-width:350px;margin:10vh auto 0;padding:30px 24px;border:1px solid var(--ln);border-radius:20px;background:rgba(255,255,255,.8);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(75,15,29,.12);animation:up .8s both}
 .box>*{animation:up .7s both}
 .box>*:nth-child(2){animation-delay:.1s}.box>*:nth-child(3){animation-delay:.18s}.box>*:nth-child(4){animation-delay:.26s}.box>*:nth-child(5){animation-delay:.34s}.box>*:nth-child(6){animation-delay:.42s}.box>*:nth-child(7){animation-delay:.5s}.box>*:nth-child(8){animation-delay:.58s}
@@ -134,14 +128,22 @@ body.so #sheet{transform:none}
   .van{width:22px;height:15px;margin-top:-7px}
   .note{font-size:12px;padding:12px 14px}
 }
-/* sfondo accesso: monogramma sfocato che scorre piano */
-.bg::before{content:"";position:absolute;inset:-120px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23d6cdcf' stroke-width='1.2'%3E%3Cpath d='M30 20l8 8-8 8-8-8z'/%3E%3Ccircle cx='90' cy='30' r='7'/%3E%3Cpath d='M60 78l9 9-9 9-9-9z'/%3E%3C/g%3E%3Ctext x='84' y='98' font-family='Georgia,serif' font-style='italic' font-size='16' fill='%23d6cdcf'%3EPS%3C/text%3E%3C/svg%3E");filter:blur(1.6px);opacity:.75;animation:drift 30s linear infinite;will-change:transform}
-@keyframes drift{to{transform:translate(120px,120px)}}
 /* scrittura a penna (effetto "hello") */
 .wr{display:block;width:min(88vw,720px);height:auto;overflow:visible}
-.intro .wr{width:min(78vw,500px)}
+.intro .wr{width:min(90vw,660px)}
 .intro .wrap{display:flex;justify-content:center;width:100%}
 .intro{transition:opacity .8s}.intro.out{opacity:0}
 .wr text{font-family:var(--sc);font-size:100px;fill:var(--fg);fill-opacity:0;stroke:var(--fg);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:900;stroke-dashoffset:900;animation:pen .95s cubic-bezier(.45,.1,.3,1) var(--d) forwards,fillin .6s calc(var(--d) + .6s) forwards}
 @keyframes pen{to{stroke-dashoffset:0}}
 @keyframes fillin{to{fill-opacity:1}}
+/* occhiolino disegnato a penna */
+.fs{fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0;animation:show 0s var(--d) forwards,pen .6s var(--d) forwards}
+.fs.dot{fill:var(--fg);fill-opacity:0;animation:show 0s var(--d) forwards,pen .35s var(--d) forwards,fillin .3s calc(var(--d) + .3s) forwards}
+.fs.eye{animation:show 0s var(--d) forwards,pen .35s var(--d) forwards,fillin .3s calc(var(--d) + .3s) forwards,winkdot .8s var(--w) 2}
+.arc{fill:none;stroke:var(--fg);stroke-width:2.2;stroke-linecap:round;opacity:0;animation:winkarc .8s var(--w) 2}
+.star{fill:var(--bd);opacity:0;transform-box:fill-box;transform-origin:center;animation:star .8s calc(var(--w) + .15s) 2}
+.star.s2{animation-delay:calc(var(--w) + .3s)}
+@keyframes show{to{opacity:1}}
+@keyframes winkdot{0%,100%{opacity:1}15%,80%{opacity:0}}
+@keyframes winkarc{0%,100%{opacity:0}15%,80%{opacity:1}}
+@keyframes star{0%{opacity:0;transform:scale(0) rotate(0)}45%{opacity:1;transform:scale(1.25) rotate(40deg)}100%{opacity:0;transform:scale(0) rotate(90deg)}}
