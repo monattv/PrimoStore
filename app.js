@@ -1,3 +1,14 @@
+// Controlli di sicurezza: mostrano un messaggio invece della pagina bianca
+window.onerror = function (m) {
+  var a = document.getElementById("app");
+  if (a && !a.innerHTML) a.innerHTML = '<p style="padding:30px;font-family:sans-serif;text-align:center">Errore: ' + m + '</p>';
+};
+if (typeof firebase === "undefined") { document.getElementById("app").innerHTML = '<p style="padding:30px;font-family:sans-serif;text-align:center">Impossibile caricare Firebase. Controlla la connessione.</p>'; throw new Error("firebase mancante"); }
+if (typeof firebaseConfig === "undefined" || firebaseConfig.apiKey === "INCOLLA_QUI") {
+  document.getElementById("app").innerHTML = '<p style="padding:30px;font-family:sans-serif;text-align:center"><b>Configurazione mancante</b><br>Carica il file config.js e inserisci i dati di Firebase.</p>';
+  throw new Error("config mancante");
+}
+
 // La configurazione (Firebase, WhatsApp, nome negozio) è nel file config.js
 
 firebase.initializeApp(firebaseConfig);
