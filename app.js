@@ -67,15 +67,15 @@ function startIntro() {
   var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
   Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
     var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
-    var step = .2, n = SHOP_NAME.replace(/ /g, "").length;
+    var step = .19, n = SHOP_NAME.replace(/ /g, "").length;
     var I = function () { var i = document.querySelector(".intro"); return S.intro && i ? i : null; };
-    var t1 = ((n - 1) * step + 1.2 + .6) * 1000;               // fine scrittura + pausa
-    var t2 = t1 + 900 + (.3 + 2 + .9 + .5) * 1000;             // fine occhiolino + pausa
+    var t1 = ((n - 1) * step + 1.1 + .6) * 1000;               // fine scrittura + pausa
+    var t2 = t1 + 900 + (.2 + 1.9 + .6 + .5) * 1000;             // fine occhiolino + pausa
     w.innerHTML = writeSVG(SHOP_NAME, step);                   // 1) "Primo Store" a penna
     setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t1);
     setTimeout(function () {                                   // 2) la scritta sparisce, spunta l'occhiolino
       var i = I(); if (!i) return;
-      w.innerHTML = '<svg class="wr eo" viewBox="-30 -90 180 170" xmlns="http://www.w3.org/2000/svg">' + eyeSVG(0, 0, .3) + '</svg>';
+      w.innerHTML = '<svg class="wr eo" viewBox="-45 -90 168 160" xmlns="http://www.w3.org/2000/svg">' + eyeSVG(0, 0, .2) + '</svg>';
       i.style.transition = "none"; i.classList.remove("out"); void i.offsetWidth; i.style.transition = "";
     }, t1 + 900);
     setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t2);
@@ -210,7 +210,7 @@ function saveAccount() {
 function eyeSVG(ex, ey, f) {
   var d = function (v) { return 'style="--d:' + (f + v).toFixed(2) + 's"'; };
   var P = function (c, dd, v) { return '<path class="fs ' + c + '" pathLength="1" d="' + dd + '" ' + d(v) + '/>'; };
-  return '<g transform="translate(' + ex + ' ' + ey + ')"><g class="face" style="--p:' + f.toFixed(2) + 's;--w:' + (f + 2).toFixed(2) + 's"><g class="mv">' +
+  return '<g transform="translate(' + ex + ' ' + ey + ')"><g class="face" style="--p:' + f.toFixed(2) + 's;--w:' + (f + 1.9).toFixed(2) + 's"><g class="mv">' +
     P("brow", "M2 -38C24 -56 60 -56 86 -38", .9) +
     '<g class="open">' +
       P("", "M-16 8C-8 5-4 2 0 0C20-26 60-26 80 0Q86 4 94 2", 0) +
@@ -221,7 +221,7 @@ function eyeSVG(ex, ey, f) {
       P("th", "M60 -18q4-8 9-11", 1) + P("th", "M67 -13q6-6 12-7", 1.1) + P("th", "M73 -8q7-4 13-3", 1.2) + P("th", "M17 -17q-3-7-7-9", 1.05) +
     '</g>' +
     '<g class="closed"><path d="M2 2C24 20 56 20 78 2"/><path d="M18 11q-3 7-6 10"/><path d="M40 17v11"/><path d="M62 11q3 7 6 10"/></g>' +
-    P("sm", "M14 42C30 62 54 62 68 40Q72 36 78 38", 1.3) + '</g>' +
+    '</g>' +
     '<g transform="translate(104 -46)"><path class="star" d="M0-9L2.4-2.4 9 0 2.4 2.4 0 9-2.4 2.4-9 0-2.4-2.4Z"/></g>' +
     '<g transform="translate(90 -64)"><path class="star s2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g></g></g>';
 }
