@@ -5,7 +5,7 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--ft);overflow-x:hidden;touch-action:manipulation;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 main{max-width:980px;margin:0 auto;padding:8px 16px 96px;animation:fade .4s both}
 a{color:inherit;text-decoration:none}
-button,input,textarea{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 button{background:none;border:1px solid var(--fg);color:var(--fg);border-radius:10px;padding:10px 16px;min-height:42px;cursor:pointer;transition:.25s}
 button:hover{background:var(--fg);color:#fff}
 button:active{transform:scale(.96)}
@@ -14,14 +14,11 @@ button.l{border:none;padding:0;min-height:0;text-decoration:underline;color:var(
 button.l:hover{background:none;color:var(--bd)}
 button.ic{border:none;width:44px;height:44px;min-height:0;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;position:relative;color:var(--fg)}
 button.ic:hover{background:var(--sf);color:var(--bd)}
-button.ic.mn{background:var(--pn);border:1px solid var(--ln);color:#000}
-button.ic.mn:hover{background:var(--sf);color:#000}
-button.ic.mn svg,button.ic.mn svg *{fill:#000!important}
 .pri,.box button{background:var(--fg);color:#fff}
 .pri:hover,.box button:hover{background:var(--bd2)}
-input,textarea{width:100%;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--in);margin:0 0 10px;font-size:16px;outline:none;transition:.25s}
+input,textarea,select{width:100%;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--in);margin:0 0 10px;font-size:16px;outline:none;transition:.25s}
 textarea{display:block;resize:vertical}
-input:focus,textarea:focus{border-color:var(--bd);box-shadow:0 0 0 3px rgba(122,31,47,.1)}
+input:focus,textarea:focus,select:focus{border-color:var(--bd);box-shadow:0 0 0 3px rgba(122,31,47,.1)}
 label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 .m{color:var(--mu);font-size:13px}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -44,7 +41,9 @@ label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 .gen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px}
 .gp{position:relative;margin:0;cursor:pointer}
 .gp input{position:absolute;opacity:0;pointer-events:none;width:auto;margin:0}
-.gp span{display:block;text-align:center;padding:12px;border:1px solid var(--ln);border-radius:10px;background:var(--in);font-size:15px;color:var(--fg);transition:.2s}
+.gp span{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 10px 10px;border:1px solid var(--ln);border-radius:14px;background:var(--in);color:var(--mu);transition:.2s}
+.gp svg{width:30px;height:60px}
+.gp em{font-style:normal;font-size:14px;font-weight:500;letter-spacing:.5px}
 .gp:hover span{border-color:var(--bd)}
 .gp input:checked+span{background:var(--fg);border-color:var(--fg);color:#fff;box-shadow:0 2px 0 var(--bd)}
 .gp input:focus-visible+span{box-shadow:0 0 0 3px rgba(122,31,47,.2)}
@@ -52,12 +51,18 @@ label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 .box .m{text-align:center;margin:6px 0 22px}
 .box button{width:100%;margin-top:6px}
 /* header */
-header{display:grid;grid-template-columns:96px 1fr 96px;align-items:center;margin-bottom:16px}
+header{display:grid;grid-template-columns:110px 1fr 110px;align-items:center;min-height:48px;margin-bottom:16px}
 h1{margin:0;text-align:center;font:italic 600 30px/1 var(--sr);letter-spacing:.5px;color:var(--fg)}
 .hl,.hr{display:flex}.hr{justify-content:flex-end}
 /* carrello in basso a destra */
 #cbtn{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 18px;background:#000;color:#fff;border:1px solid #000;border-radius:16px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 #cbtn:hover{background:#1c1c1c;color:#fff}
+/* menu in alto a sinistra: stesso stile del carrello, in bianco */
+#mbtn{position:fixed;left:16px;top:calc(8px + env(safe-area-inset-top,0px));z-index:15;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 16px;background:#fff;color:#000;border:1px solid rgba(0,0,0,.12);border-radius:16px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+#mbtn:hover{background:#f1eeee;color:#000}
+#mbtn svg,#mbtn svg *{fill:#000!important}
+#mbtn svg{flex:none}
+body:not(.in) #mbtn{display:none}
 #cbtn svg{flex:none}
 body:not(.in) #cbtn{display:none}
 #bd{position:absolute;top:-8px;right:-8px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--bd);color:#fff;font-size:11px;line-height:16px;text-align:center;font-weight:600;border:2px solid var(--bg)}
@@ -124,6 +129,11 @@ body.so #sheet{transform:none}
 .chk input,.chip input{width:auto;margin:0}
 .row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--ln);animation:up .3s both}
 .row .i{flex:1;min-width:0}
+.row.ar{flex-wrap:wrap}
+.act{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+button.sm{padding:6px 14px;min-height:36px;font-size:13px;border-radius:8px}
+button.sm.dg{border-color:var(--bd);color:var(--bd)}
+button.sm.dg:hover{background:var(--bd);color:#fff}
 .cat{padding:12px 0;border-top:1px solid var(--ln)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .chip{display:flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:20px;padding:5px 12px;font-size:13px;color:var(--fg);margin:0;cursor:pointer;background:var(--in)}
@@ -145,7 +155,8 @@ body.so #sheet{transform:none}
 #toast.s{opacity:1;transform:translate(-50%,0)}
 /* telefono: 3 prodotti per fila */
 @media (max-width:600px){
-  main{padding:4px 12px 90px}
+  main{padding:8px 12px 90px}
+  #mbtn{left:12px;padding:0 13px}
   h1{font-size:25px}
   .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 8px}
   .ph{border-radius:8px}
