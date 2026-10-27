@@ -70,7 +70,7 @@ function startIntro() {
     var step = .19, n = SHOP_NAME.replace(/ /g, "").length;
     var I = function () { var i = document.querySelector(".intro"); return S.intro && i ? i : null; };
     var t1 = ((n - 1) * step + 1.1 + .6) * 1000;               // fine scrittura + pausa
-    var t2 = t1 + 900 + (.2 + 1.9 + .6 + .5) * 1000;             // fine occhiolino + pausa
+    var t2 = t1 + 900 + (.2 + 1.9 + .6 + .6 + 1.2) * 1000;             // fine occhiolino + pausa
     w.innerHTML = writeSVG(SHOP_NAME, step);                   // 1) "Primo Store" a penna
     setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t1);
     setTimeout(function () {                                   // 2) la scritta sparisce, spunta l'occhiolino
@@ -207,6 +207,7 @@ function saveAccount() {
 }
 
 // ---------- accesso ----------
+var LASH = ["M11 -10.5q-5-5-10-5.5", "M22 -15q-3-7-8-9.5", "M33 -18.5q-1-8-4-11.5", "M44 -19.4q1-8 1-12.5", "M55 -17.3q3-8 7-11", "M66 -12.5q6-7 12-8", "M75 -5.7q7-4 13-3"];
 function eyeSVG(ex, ey, f) {
   var d = function (v) { return 'style="--d:' + (f + v).toFixed(2) + 's"'; };
   var P = function (c, dd, v) { return '<path class="fs ' + c + '" pathLength="1" d="' + dd + '" ' + d(v) + '/>'; };
@@ -215,10 +216,11 @@ function eyeSVG(ex, ey, f) {
     '<g class="open">' +
       P("", "M-16 8C-8 5-4 2 0 0C20-26 60-26 80 0Q86 4 94 2", 0) +
       P("th", "M6 4C28 22 56 22 76 3", .35) +
-      '<circle class="fs" pathLength="1" cx="40" cy="-2" r="12" ' + d(.55) + '/>' +
-      '<circle class="fs dot" pathLength="1" cx="40" cy="-2" r="5.5" ' + d(.8) + '/>' +
-      '<circle class="hl" cx="42.4" cy="-4.6" r="1.7" ' + d(1.15) + '/>' +
-      P("th", "M60 -18q4-8 9-11", 1) + P("th", "M67 -13q6-6 12-7", 1.1) + P("th", "M73 -8q7-4 13-3", 1.2) + P("th", "M17 -17q-3-7-7-9", 1.05) +
+      '<circle class="fs" pathLength="1" cx="40" cy="-2" r="14" ' + d(.55) + '/>' +
+      '<circle class="fs dot" pathLength="1" cx="40" cy="-2" r="8.5" ' + d(.8) + '/>' +
+      '<circle class="hl" cx="45" cy="-7" r="1.3" ' + d(1.15) + '/>' +
+      LASH.map(function (l, i) { return P("th", l, 1 + i * .04); }).join("") +
+      '<g class="refl"><circle class="mw" cx="40" cy="1" r="4"/><circle class="mw t" cx="40" cy="1" r="2.8"/><path class="mw" d="M38.2 -2.6L36.6 -7M41.8 -2.6L43.4 -7"/><text class="mt" x="40" y="2.9" text-anchor="middle">1</text></g>' +
     '</g>' +
     '<g class="closed"><path d="M2 2C24 20 56 20 78 2"/><path d="M18 11q-3 7-6 10"/><path d="M40 17v11"/><path d="M62 11q3 7 6 10"/></g>' +
     '</g>' +
