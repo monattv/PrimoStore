@@ -67,11 +67,19 @@ function startIntro() {
   var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
   Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
     var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
-    var step = .2, n = SHOP_NAME.replace(/ /g, "").length, f0 = (n - 1) * step + 1.3;
-    w.innerHTML = writeSVG(SHOP_NAME, step, f0);
-    var tot = (f0 + 2 + .9 + .8) * 1000;
-    setTimeout(function () { var i = document.querySelector(".intro"); if (i) i.classList.add("out"); }, tot);
-    setTimeout(endIntro, tot + 800); }, 500); });
+    var step = .2, n = SHOP_NAME.replace(/ /g, "").length;
+    var I = function () { var i = document.querySelector(".intro"); return S.intro && i ? i : null; };
+    var t1 = ((n - 1) * step + 1.2 + .6) * 1000;               // fine scrittura + pausa
+    var t2 = t1 + 900 + (.3 + 2 + .9 + .5) * 1000;             // fine occhiolino + pausa
+    w.innerHTML = writeSVG(SHOP_NAME, step);                   // 1) "Primo Store" a penna
+    setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t1);
+    setTimeout(function () {                                   // 2) la scritta sparisce, spunta l'occhiolino
+      var i = I(); if (!i) return;
+      w.innerHTML = '<svg class="wr eo" viewBox="-30 -90 180 170" xmlns="http://www.w3.org/2000/svg">' + eyeSVG(0, 0, .3) + '</svg>';
+      i.style.transition = "none"; i.classList.remove("out"); void i.offsetWidth; i.style.transition = "";
+    }, t1 + 900);
+    setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t2);
+    setTimeout(endIntro, t2 + 800); }, 500); });                // 3) schermata di accesso
 }
 function endIntro() { if (!S.intro) return; S.intro = false; R(); }
 
