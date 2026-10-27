@@ -32,7 +32,7 @@ label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
 @keyframes write{to{clip-path:inset(-20% 0 -20% 0)}}
 @keyframes outro{to{opacity:0}}
 /* accesso */
-.box{max-width:350px;margin:10vh auto 0;padding:30px 24px;border:1px solid var(--ln);border-radius:20px;background:rgba(255,255,255,.8);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(75,15,29,.12);animation:up .8s both}
+.box{max-width:350px;margin:5vh auto 0;padding:30px 24px;border:1px solid var(--ln);border-radius:20px;background:rgba(255,255,255,.8);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(75,15,29,.12);animation:up .8s both}
 .box>*{animation:up .7s both}
 .box>*:nth-child(2){animation-delay:.1s}.box>*:nth-child(3){animation-delay:.18s}.box>*:nth-child(4){animation-delay:.26s}.box>*:nth-child(5){animation-delay:.34s}.box>*:nth-child(6){animation-delay:.42s}.box>*:nth-child(7){animation-delay:.5s}.box>*:nth-child(8){animation-delay:.58s}
 .logo{font:italic 600 34px var(--sr);letter-spacing:.5px;text-align:center;color:var(--fg)}
@@ -160,3 +160,9 @@ body.so #sheet{transform:none}
 @keyframes brw{0%,100%{transform:none}25%,70%{transform:translateY(5px)}}
 @keyframes smw{0%,100%{transform:none}30%,65%{transform:translateY(-3px) scaleX(1.1)}}
 .intro .wr.eo{width:min(62vw,340px)}
+/* riflesso nella pupilla: una medaglia con il numero 1 */
+.refl{opacity:0;transform-box:fill-box;transform-origin:center;animation:refl .6s calc(var(--w) + .6s) forwards}
+.mw{fill:none;stroke:#fff;stroke-width:.8;stroke-linecap:round}
+.mw.t{stroke-width:.4;opacity:.7}
+.wr text.mt{animation:none;stroke:none;stroke-dasharray:none;fill:#fff;fill-opacity:1;font-family:var(--ft);font-size:5.4px;font-weight:700}
+@keyframes refl{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
