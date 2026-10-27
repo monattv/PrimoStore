@@ -160,3 +160,4 @@ body.so #sheet{transform:none}
 @keyframes tilt{0%,100%{transform:none}30%,65%{transform:rotate(-5deg) translateY(2px)}}
 @keyframes brw{0%,100%{transform:none}25%,70%{transform:translateY(5px)}}
 @keyframes smw{0%,100%{transform:none}30%,65%{transform:translateY(-3px) scaleX(1.1)}}
+.intro .wr.eo{width:min(62vw,340px)}
