@@ -39,7 +39,9 @@ auth.onAuthStateChanged(function (u) {
   R(); menuR(); cartR();
 });
 
-var ICO_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
+var ICO_MENU = '<svg width="24" height="24" viewBox="0 0 24 24" fill="#000" style="fill:#000"><rect x="3" y="5.2" width="18" height="2.4" rx="1.2"/><rect x="3" y="10.8" width="18" height="2.4" rx="1.2"/><rect x="3" y="16.4" width="11" height="2.4" rx="1.2"/></svg>';
+var ICO_IG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0"/><path d="M16.5 7.5v.01"/></svg>';
+var ICO_WA = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>';
 var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
 var ICO_USER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.8 3.7-6 7.5-6s6.7 2.2 7.5 6"/></svg>';
 var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
@@ -61,10 +63,8 @@ function R() {
           : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel">' + genH("gn", S.g, "S.g=this.value") + '<button onclick="login()">Entra</button>') + '</div>';
     return;
   }
-  var n = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
-  a.innerHTML = '<header><div class="hl"><button class="ic" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button></div><h1>' + esc(SHOP_NAME) + '</h1>' +
-    '<div class="hr">' + (S.admin ? '' : '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>') +
-    '<button class="ic" id="cbtn" onclick="openC()" aria-label="Carrello">' + ICO_BAG + '<b id="bd"' + (n ? '' : ' style="display:none"') + '>' + n + '</b></button></div></header>' +
+  a.innerHTML = '<header><div class="hl"><button class="ic mn" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button></div><h1>' + esc(SHOP_NAME) + '</h1>' +
+    '<div class="hr">' + (S.admin ? '' : '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>') + '</div></header>' +
     (S.view === "admin" && S.admin ? admin() : shopH());
 }
 function startIntro() {
@@ -187,7 +187,9 @@ function menuR() {
   $("menu").innerHTML = '<div class="logo">' + esc(SHOP_NAME) + '</div>' +
     items.map(function (c) { return '<button class="mi ' + (S.cat === c.id && S.view === "shop" ? "on" : "") + '" onclick="pickCat(\'' + c.id + '\')">' + esc(c.name) + '</button>'; }).join("") +
     '<div class="mf">' + (S.admin ? '<button class="mi" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Torna al negozio") + '</button>' : '') +
-    '<button class="mi" onclick="logout()">Esci</button></div>';
+    '<button class="mi" onclick="logout()">Esci</button></div>' +
+    '<div class="soc"><a href="https://instagram.com/' + encodeURIComponent(typeof SHOP_INSTAGRAM === "string" ? SHOP_INSTAGRAM : "") + '" target="_blank" rel="noopener" aria-label="Instagram">' + ICO_IG + '</a>' +
+    '<a href="https://wa.me/' + SHOP_PHONE + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + ICO_WA + '</a></div>';
 }
 function pickCat(id) { S.cat = id; S.view = "shop"; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
 function openM() { document.body.classList.add("mo"); }
@@ -210,13 +212,14 @@ function cartR() {
     (rows || '<p class="m">Il carrello è vuoto.</p>') +
     (rows ? '<div class="tot"><span>Totale</span><b>€ ' + tot.toFixed(2) + '</b></div><a class="wa" href="https://wa.me/' + SHOP_PHONE + '?text=' + msg + '" target="_blank" rel="noopener">Ordina su WhatsApp</a><p class="m" style="text-align:center">Colori, varianti e pagamento si concordano in chat.</p>' : '');
   try { localStorage.setItem("cart", JSON.stringify(S.cart)); } catch (e) {}
+  var fb = $("cbtn"); if (fb && !fb.firstChild) fb.innerHTML = ICO_BAG + '<span>Carrello</span><b id="bd" style="display:none"></b>';
   var b = $("bd"), nn = S.cart.reduce(function (t, c) { return t + c.q; }, 0); if (b) { b.textContent = nn; b.style.display = nn ? "" : "none"; }
 }
 function sizesOf(s) { return (s.sizes || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean); }
 function add(id, btn) {
   var sz = sizesOf(shoe(id));
   if (sz.length) { openSheet(id, sz); return; }
-  addItem(id, ""); fly(btn);
+  addItem(id, ""); fly(btn, id);
 }
 function addItem(id, size) {
   var f = S.cart.filter(function (c) { return c.id === id && c.size === size; })[0];
@@ -237,16 +240,18 @@ function pickSz(el, v) {
 }
 function confirmAdd(btn) {
   if (!S.pend || !S.pend.size) return;
-  addItem(S.pend.id, S.pend.size); fly(btn); setTimeout(closeAll, 800);
+  addItem(S.pend.id, S.pend.size); fly(btn, S.pend.id); setTimeout(closeAll, 800);
 }
-function fly(b) {
+function fly(b, id) {
   b.classList.remove("run"); void b.offsetWidth; b.classList.add("run");
   var t = $("cbtn"); if (!t) return;
-  var a = b.getBoundingClientRect(), c = t.getBoundingClientRect(), p = document.createElement("div");
-  p.className = "pk"; p.style.left = (a.left + a.width / 2 - 9) + "px"; p.style.top = a.top + "px"; document.body.appendChild(p);
-  var dx = c.left + c.width / 2 - a.left - a.width / 2, dy = c.top + c.height / 2 - a.top - 9;
+  var s = id ? shoe(id) : null, a = b.getBoundingClientRect(), c = t.getBoundingClientRect(), p = document.createElement("div");
+  p.className = "pk"; p.style.left = (a.left + a.width / 2 - 17) + "px"; p.style.top = a.top + "px";   // pallino, o foto del prodotto
+  if (s && s.photo) { p.classList.add("im"); p.style.backgroundImage = 'url("' + s.photo + '")'; }
+  document.body.appendChild(p);
+  var dx = c.left + c.width / 2 - a.left - a.width / 2, dy = c.top + c.height / 2 - a.top - 17;
   p.animate([{transform:"translate(0,0) scale(1)", opacity:0, offset:0}, {transform:"translate(0,-14px) scale(1)", opacity:1, offset:.2},
-    {transform:"translate(" + dx + "px," + dy + "px) scale(.3)", opacity:.3, offset:1}], {duration:700, delay:500, easing:"ease-in", fill:"both"}).onfinish = function () {
+    {transform:"translate(" + dx + "px," + dy + "px) scale(.3)", opacity:.3, offset:1}], {duration:650, delay:350, easing:"ease-in", fill:"both"}).onfinish = function () {
     p.remove(); t.animate([{transform:"scale(1)"}, {transform:"scale(1.12)"}, {transform:"scale(1)"}], {duration:350});
     var g = $("bd"); if (g) { g.classList.remove("b"); void g.offsetWidth; g.classList.add("b"); } };
 }
