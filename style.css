@@ -139,11 +139,15 @@ body.so #sheet{transform:none}
 /* occhiolino disegnato a penna */
 .fs{fill:none;stroke:var(--fg);stroke-width:1.8;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0;animation:show 0s var(--d) forwards,pen .6s var(--d) forwards}
 .fs.dot{fill:var(--fg);fill-opacity:0;animation:show 0s var(--d) forwards,pen .35s var(--d) forwards,fillin .3s calc(var(--d) + .3s) forwards}
-.fs.eye{animation:show 0s var(--d) forwards,pen .35s var(--d) forwards,fillin .3s calc(var(--d) + .3s) forwards,winkdot .8s var(--w) 2}
-.arc{fill:none;stroke:var(--fg);stroke-width:2.2;stroke-linecap:round;opacity:0;animation:winkarc .8s var(--w) 2}
 .star{fill:var(--bd);opacity:0;transform-box:fill-box;transform-origin:center;animation:star .8s calc(var(--w) + .15s) 2}
 .star.s2{animation-delay:calc(var(--w) + .3s)}
 @keyframes show{to{opacity:1}}
 @keyframes winkdot{0%,100%{opacity:1}15%,80%{opacity:0}}
 @keyframes winkarc{0%,100%{opacity:0}15%,80%{opacity:1}}
 @keyframes star{0%{opacity:0;transform:scale(0) rotate(0)}45%{opacity:1;transform:scale(1.25) rotate(40deg)}100%{opacity:0;transform:scale(0) rotate(90deg)}}
+/* occhio elegante a penna */
+.fs.th{stroke-width:1.3}
+.hl{fill:#fff;opacity:0;animation:show 0s var(--d) forwards}
+.open{animation:winkdot .8s var(--w) 2}
+.closed{opacity:0;animation:winkarc .8s var(--w) 2}
+.closed path{fill:none;stroke:var(--fg);stroke-width:2;stroke-linecap:round}
