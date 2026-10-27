@@ -44,7 +44,7 @@ var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentat
 function R() {
   var a = $("app"); document.body.classList.toggle("in", !!S.user && !S.intro);
   if (S.intro) {
-    if (!a.querySelector(".intro")) a.innerHTML = '<div class="bg"><i></i><i></i></div><div class="intro" onclick="endIntro()"><span class="script">' + esc(SHOP_NAME) + '</span></div>';
+    if (!a.querySelector(".intro")) a.innerHTML = '<div class="bg"><i></i><i></i></div><div class="intro" onclick="endIntro()"><div class="wrap"></div></div>';
     return;
   }
   if (!S.user) {
@@ -66,8 +66,11 @@ function startIntro() {
   var loaded = new Promise(function (r) { if (document.readyState === "complete") r(); else window.addEventListener("load", r); });
   var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
   Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
-    var e = document.querySelector(".script"); if (!S.intro || !e) return;
-    e.classList.add("play"); setTimeout(endIntro, 4200); }, 500); });
+    var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
+    var step = .2; w.innerHTML = writeSVG(SHOP_NAME, step);
+    var tot = (SHOP_NAME.length - 1) * step * 1000 + 1100;
+    setTimeout(function () { var i = document.querySelector(".intro"); if (i) i.classList.add("out"); }, tot + 700);
+    setTimeout(endIntro, tot + 1500); }, 500); });
 }
 function endIntro() { if (!S.intro) return; S.intro = false; R(); }
 
@@ -195,7 +198,25 @@ function saveAccount() {
 }
 
 // ---------- accesso ----------
-function hi() { var h = $("hi"); h.innerHTML = '<span>Benvenuto, ' + esc(S.user.first) + '</span>'; h.className = ""; void h.offsetWidth; h.className = "show"; setTimeout(function () { h.className = ""; }, 3700); }
+function writeSVG(t, step) {
+  var cx = null, x = 30, o = "", n = 0, k, ch, w;
+  try { cx = document.createElement("canvas").getContext("2d"); cx.font = '100px "Great Vibes", cursive'; } catch (e) { cx = null; }
+  for (k = 0; k < t.length; k++) {
+    ch = t.charAt(k); w = cx ? cx.measureText(ch).width : 40;
+    if (ch !== " ") { o += '<text x="' + x + '" y="125" style="--d:' + (n * step).toFixed(2) + 's">' + esc(ch) + '</text>'; n++; }
+    x += w;
+  }
+  return '<svg class="wr" viewBox="0 0 ' + (x + 30) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
+}
+function hi() {
+  var h = $("hi"), t = "Benvenuto, " + S.user.first;
+  var go = function () {
+    var dur = t.length * 110 + 2800;
+    h.innerHTML = writeSVG(t, .11); h.style.animationDuration = dur + "ms"; h.className = ""; void h.offsetWidth; h.className = "show";
+    setTimeout(function () { h.className = ""; }, dur + 100);
+  };
+  try { Promise.race([document.fonts.load('100px "Great Vibes"'), new Promise(function (r) { setTimeout(r, 1500); })]).then(go); } catch (e) { go(); }
+}
 function login() {
   var f = $("fn").value.trim(), l = "", p = $("ph").value.replace(/[\s\-+]/g, "");
   if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
