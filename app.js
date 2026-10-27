@@ -36,6 +36,7 @@ auth.onAuthStateChanged(function (u) {
 
 var ICO_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
 var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
+var ICO_USER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.8 3.7-6 7.5-6s6.7 2.2 7.5 6"/></svg>';
 var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
 var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.</div>';
 
@@ -51,13 +52,22 @@ function R() {
     a.innerHTML = '<div class="bg"><i></i><i></i><i></i></div><div class="box"><div class="logo">' + esc(SHOP_NAME) + '</div>' +
       '<p class="m">' + (ad ? "Accesso gestore" : "Entra nel negozio") + '</p>' +
       (ad ? '<label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password"><button onclick="alogin()">Entra</button>'
-          : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Cognome</label><input id="ln" autocomplete="family-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel"><button onclick="login()">Entra</button>') + '</div>';
+          : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel"><button onclick="login()">Entra</button>') + '</div>';
     return;
   }
   var n = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
-  a.innerHTML = '<header><button class="ic" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button><h1>' + esc(SHOP_NAME) + '</h1>' +
-    '<button class="ic" id="cbtn" onclick="openC()" aria-label="Carrello">' + ICO_BAG + '<b id="bd"' + (n ? '' : ' style="display:none"') + '>' + n + '</b></button></header>' +
+  a.innerHTML = '<header><div class="hl"><button class="ic" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button></div><h1>' + esc(SHOP_NAME) + '</h1>' +
+    '<div class="hr">' + (S.admin ? '' : '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>') +
+    '<button class="ic" id="cbtn" onclick="openC()" aria-label="Carrello">' + ICO_BAG + '<b id="bd"' + (n ? '' : ' style="display:none"') + '>' + n + '</b></button></div></header>' +
     (S.view === "admin" && S.admin ? admin() : shopH());
+}
+function startIntro() {
+  var fl = function () { try { return Promise.all([document.fonts.load('60px "Great Vibes"'), document.fonts.load('italic 600 20px "Cormorant Garamond"')]); } catch (e) { return Promise.resolve(); } };
+  var loaded = new Promise(function (r) { if (document.readyState === "complete") r(); else window.addEventListener("load", r); });
+  var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
+  Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
+    var e = document.querySelector(".script"); if (!S.intro || !e) return;
+    e.classList.add("play"); setTimeout(endIntro, 4200); }, 500); });
 }
 function endIntro() { if (!S.intro) return; S.intro = false; R(); }
 
@@ -120,7 +130,7 @@ function cartR() {
       '<div class="q"><button onclick="qty(' + i + ',-1)">−</button>' + c.q + '<button onclick="qty(' + i + ',1)">+</button></div></div></div>';
   });
   var u = S.user || {first:"", last:"", phone:""};
-  var msg = encodeURIComponent("Ciao, sono " + u.first + " " + u.last + " (" + u.phone + "). Vorrei ordinare:\n" + lines.join("\n") + "\nTotale: € " + tot.toFixed(2));
+  var msg = encodeURIComponent("Ciao, sono " + (u.first + " " + u.last).trim() + " (" + u.phone + "). Vorrei ordinare:\n" + lines.join("\n") + "\nTotale: € " + tot.toFixed(2));
   $("cart").innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><b>Carrello</b><button class="l" onclick="closeAll()">Chiudi</button></div>' +
     (rows || '<p class="m">Il carrello è vuoto.</p>') +
     (rows ? '<div class="tot"><span>Totale</span><b>€ ' + tot.toFixed(2) + '</b></div><a class="wa" href="https://wa.me/' + SHOP_PHONE + '?text=' + msg + '" target="_blank" rel="noopener">Ordina su WhatsApp</a><p class="m" style="text-align:center">Colori, varianti e pagamento si concordano in chat.</p>' : '');
@@ -168,11 +178,27 @@ function fly(b) {
 function qty(i, d) { S.cart[i].q += d; if (S.cart[i].q < 1) S.cart.splice(i, 1); cartR(); R(); }
 function toast(t) { var e = $("toast"); e.textContent = t; e.className = "s"; clearTimeout(toast.t); toast.t = setTimeout(function () { e.className = ""; }, 1800); }
 
+// ---------- account ----------
+function openAccount() {
+  $("sheet").innerHTML = '<div class="shh"><b>Il tuo account</b><button class="l" onclick="closeAll()">Chiudi</button></div><div class="m" style="margin-bottom:14px">Modifica i tuoi dati</div>' +
+    '<label>Nome</label><input id="an" value="' + esc(S.user.first) + '"><label>Numero di telefono</label><input id="ap" type="tel" value="' + esc(S.user.phone) + '">' +
+    '<button class="pri" style="width:100%" onclick="saveAccount()">Salva</button>';
+  document.body.classList.add("so");
+}
+function saveAccount() {
+  var f = $("an").value.trim(), p = $("ap").value.replace(/[\s\-+]/g, "");
+  if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
+  S.user = {first:f, last:"", phone:p};
+  try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
+  db.collection("clients").doc(p).set({first:f, last:"", phone:p, last_login:Date.now()}).catch(function () {});
+  closeAll(); R(); cartR(); toast("Dati aggiornati");
+}
+
 // ---------- accesso ----------
-function hi() { var h = $("hi"); h.innerHTML = '<span>Benvenuto, ' + esc(S.user.first) + '</span>'; h.className = ""; void h.offsetWidth; h.className = "show"; setTimeout(function () { h.className = ""; }, 2700); }
+function hi() { var h = $("hi"); h.innerHTML = '<span>Benvenuto, ' + esc(S.user.first) + '</span>'; h.className = ""; void h.offsetWidth; h.className = "show"; setTimeout(function () { h.className = ""; }, 3700); }
 function login() {
-  var f = $("fn").value.trim(), l = $("ln").value.trim(), p = $("ph").value.replace(/[\s\-+]/g, "");
-  if (!f || !l || p.length < 8) { alert("Inserisci nome, cognome e un numero valido"); return; }
+  var f = $("fn").value.trim(), l = "", p = $("ph").value.replace(/[\s\-+]/g, "");
+  if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
   S.user = {first:f, last:l, phone:p};
   try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
   db.collection("clients").doc(p).set({first:f, last:l, phone:p, last_login:Date.now()}).catch(function () {});
@@ -212,5 +238,6 @@ function delCat(id) { if (confirm("Eliminare la categoria?")) { if (S.cat === id
 function tcat(cid, sid, on) { db.collection("menu").doc(cid).update({ids: on ? FV.arrayUnion(sid) : FV.arrayRemove(sid)}); }
 
 window.addEventListener("hashchange", R);
-S.intro = !S.user; if (S.intro) setTimeout(endIntro, 4400);
+S.intro = !S.user;
 R();
+if (S.intro) startIntro();
