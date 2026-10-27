@@ -69,7 +69,7 @@ function startIntro() {
     var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
     var step = .2, n = SHOP_NAME.replace(/ /g, "").length, f0 = (n - 1) * step + 1.2;
     w.innerHTML = writeSVG(SHOP_NAME, step, f0);
-    var tot = (f0 + 1.1 + 1.6 + .7) * 1000;
+    var tot = (f0 + 1.8 + 1.6 + .7) * 1000;
     setTimeout(function () { var i = document.querySelector(".intro"); if (i) i.classList.add("out"); }, tot);
     setTimeout(endIntro, tot + 800); }, 500); });
 }
@@ -199,16 +199,22 @@ function saveAccount() {
 }
 
 // ---------- accesso ----------
-function faceSVG(cx, cy, f) {
+function eyeSVG(ex, ey, f) {
   var d = function (v) { return 'style="--d:' + (f + v).toFixed(2) + 's"'; };
-  return '<g class="face" style="--w:' + (f + 1.1).toFixed(2) + 's">' +
-    '<circle class="fs" pathLength="1" cx="' + cx + '" cy="' + cy + '" r="42" ' + d(0) + '/>' +
-    '<circle class="fs dot" pathLength="1" cx="' + (cx - 15) + '" cy="' + (cy - 8) + '" r="3.8" ' + d(.35) + '/>' +
-    '<circle class="fs dot eye" pathLength="1" cx="' + (cx + 15) + '" cy="' + (cy - 8) + '" r="3.8" ' + d(.4) + '/>' +
-    '<path class="fs" pathLength="1" d="M' + (cx - 17) + ' ' + (cy + 10) + 'Q' + cx + ' ' + (cy + 28) + ' ' + (cx + 17) + ' ' + (cy + 10) + '" ' + d(.5) + '/>' +
-    '<path class="arc" d="M' + (cx + 8) + ' ' + (cy - 6) + 'Q' + (cx + 15) + ' ' + (cy - 15) + ' ' + (cx + 22) + ' ' + (cy - 6) + '"/>' +
-    '<g transform="translate(' + (cx + 46) + ' ' + (cy - 32) + ')"><path class="star" d="M0-9L2.4-2.4 9 0 2.4 2.4 0 9-2.4 2.4-9 0-2.4-2.4Z"/></g>' +
-    '<g transform="translate(' + (cx + 37) + ' ' + (cy - 44) + ')"><path class="star s2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g></g>';
+  var P = function (c, dd, v) { return '<path class="fs ' + c + '" pathLength="1" d="' + dd + '" ' + d(v) + '/>'; };
+  return '<g class="face" style="--w:' + (f + 1.8).toFixed(2) + 's" transform="translate(' + ex + ' ' + ey + ')">' +
+    P("", "M2 -38C24 -56 60 -56 86 -38", .9) +
+    '<g class="open">' +
+      P("", "M-16 8C-8 5-4 2 0 0C20-26 60-26 80 0Q86 4 94 2", 0) +
+      P("th", "M6 4C28 22 56 22 76 3", .35) +
+      '<circle class="fs" pathLength="1" cx="40" cy="-2" r="12" ' + d(.55) + '/>' +
+      '<circle class="fs dot" pathLength="1" cx="40" cy="-2" r="5.5" ' + d(.8) + '/>' +
+      '<circle class="hl" cx="42.4" cy="-4.6" r="1.7" ' + d(1.15) + '/>' +
+      P("th", "M60 -18q4-8 9-11", 1) + P("th", "M67 -13q6-6 12-7", 1.1) + P("th", "M73 -8q7-4 13-3", 1.2) + P("th", "M17 -17q-3-7-7-9", 1.05) +
+    '</g>' +
+    '<g class="closed"><path d="M2 2C24 20 56 20 78 2"/><path d="M18 11q-3 7-6 10"/><path d="M40 17v11"/><path d="M62 11q3 7 6 10"/></g>' +
+    '<g transform="translate(104 -46)"><path class="star" d="M0-9L2.4-2.4 9 0 2.4 2.4 0 9-2.4 2.4-9 0-2.4-2.4Z"/></g>' +
+    '<g transform="translate(90 -64)"><path class="star s2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g></g>';
 }
 function writeSVG(t, step, f0) {
   var cx = null, x = 30, o = "", n = 0, k, ch, w;
@@ -218,7 +224,7 @@ function writeSVG(t, step, f0) {
     if (ch !== " ") { o += '<text x="' + x + '" y="125" style="--d:' + (n * step).toFixed(2) + 's">' + esc(ch) + '</text>'; n++; }
     x += w;
   }
-  var fw = 0; if (f0 !== undefined) { fw = 110; o += faceSVG(x + 62, 88, f0); }
+  var fw = 0; if (f0 !== undefined) { fw = 150; o += eyeSVG(x + 34, 96, f0); }
   return '<svg class="wr" viewBox="0 0 ' + (x + 30 + fw) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
 }
 function hi() {
