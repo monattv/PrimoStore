@@ -44,7 +44,8 @@ var ICO_IG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke
 var ICO_WA = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>';
 var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
 var ICO_USER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.8 3.7-6 7.5-6s6.7 2.2 7.5 6"/></svg>';
-var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
+$("mbtn").innerHTML = ICO_MENU + '<span>Menu</span>';
+var VAN ='<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
 var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.</div>';
 
 // ---------- schermate ----------
@@ -63,7 +64,7 @@ function R() {
           : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel">' + genH("gn", S.g, "S.g=this.value") + '<button onclick="login()">Entra</button>') + '</div>';
     return;
   }
-  a.innerHTML = '<header><div class="hl"><button class="ic mn" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button></div><h1>' + esc(SHOP_NAME) + '</h1>' +
+  a.innerHTML = '<header><div class="hl"></div><h1>' + esc(SHOP_NAME) + '</h1>' +
     '<div class="hr">' + (S.admin ? '' : '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>') + '</div></header>' +
     (S.view === "admin" && S.admin ? admin() : shopH());
 }
@@ -126,36 +127,45 @@ function admin() {
 
 // ---------- annunci in home ----------
 function adsH() {
-  var l = S.ads.filter(function (a) { return a.on !== false; });
+  var l = S.ads.filter(adLive);
   return l.map(function (a, i) {
     return '<div class="ad" style="animation-delay:' + (i * 40) + 'ms">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : '') +
       (a.title || a.text ? '<div class="adb">' + (a.title ? '<b>' + esc(a.title) + '</b>' : '') + (a.text ? '<p>' + esc(a.text).replace(/\n/g, "<br>") + '</p>' : '') + '</div>' : '') + '</div>';
   }).join("");
 }
+var FIG = {   // omino e donnina come sulle porte dei bagni
+  uomo: '<svg viewBox="0 0 24 48" fill="currentColor"><circle cx="12" cy="6" r="4"/><rect x="7" y="12" width="10" height="17" rx="2"/><rect x="3" y="12" width="3" height="15" rx="1.5"/><rect x="18" y="12" width="3" height="15" rx="1.5"/><rect x="8" y="27" width="3.4" height="17" rx="1.7"/><rect x="12.6" y="27" width="3.4" height="17" rx="1.7"/></svg>',
+  donna: '<svg viewBox="0 0 24 48" fill="currentColor"><circle cx="12" cy="6" r="4"/><path d="M9 12h6l5 17H4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><rect x="4.4" y="12.6" width="2.6" height="11" rx="1.3" transform="rotate(12 5.7 12.6)"/><rect x="17" y="12.6" width="2.6" height="11" rx="1.3" transform="rotate(-12 18.3 12.6)"/><rect x="8.8" y="29" width="3" height="15" rx="1.5"/><rect x="12.2" y="29" width="3" height="15" rx="1.5"/></svg>'
+};
 function genH(nm, v, on) {
   return '<label>Sono</label><div class="gen">' + [["uomo", "Uomo"], ["donna", "Donna"]].map(function (x) {
-    return '<label class="gp"><input type="radio" name="' + nm + '" value="' + x[0] + '"' + (v === x[0] ? " checked" : "") + (on ? ' onchange="' + on + '"' : "") + '><span>' + x[1] + '</span></label>';
+    return '<label class="gp"><input type="radio" name="' + nm + '" value="' + x[0] + '"' + (v === x[0] ? " checked" : "") + (on ? ' onchange="' + on + '"' : "") + '><span>' + FIG[x[0]] + '<em>' + x[1] + '</em></span></label>';
   }).join("") + '</div>';
 }
 function adOf(id) { return S.ads.filter(function (a) { return a.id === id; })[0]; }
 function adDraft() {
-  if (!S.adf) { var a = S.adEdit ? adOf(S.adEdit) : null; S.adf = a ? {title:a.title || "", text:a.text || "", photo:a.photo || "", on:a.on !== false} : {title:"", text:"", photo:"", on:true}; }
+  if (!S.adf) { var a = S.adEdit ? adOf(S.adEdit) : null; S.adf = a ? {title:a.title || "", text:a.text || "", photo:a.photo || "", on:a.on !== false, dur:a.until ? "keep" : "0"} : {title:"", text:"", photo:"", on:true, dur:"0"}; }
   return S.adf;
 }
-function adSync() { var d = S.adf; if (d && $("adt")) { d.title = $("adt").value; d.text = $("adx").value; d.on = $("adv").checked; } return d; }
+function adSync() { var d = S.adf; if (d && $("adt")) { d.title = $("adt").value; d.text = $("adx").value; d.on = $("adv").checked; d.dur = $("adu").value; } return d; }
+function adLive(a) { return a.on !== false && (!a.until || a.until > Date.now()); }
+function fmtD(t) { return new Date(t).toLocaleString("it-IT", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}); }
 function adAdmin() {
-  adSync(); var d = adDraft();
-  var f = '<div class="form"><div class="m" style="margin-bottom:10px">' + (S.adEdit ? "Modifica annuncio" : "Nuovo annuncio in home (visibile a tutti)") + '</div>' +
+  adSync(); var d = adDraft(), ea = S.adEdit ? adOf(S.adEdit) : null;
+  var opts = [["0", "Sempre (finché non lo elimini)"], ["1", "1 giorno"], ["3", "3 giorni"], ["7", "1 settimana"], ["14", "2 settimane"], ["30", "1 mese"]];
+  if (ea && ea.until) opts.unshift(["keep", (ea.until > Date.now() ? "Mantieni (scade il " : "Mantieni (scaduto il ") + fmtD(ea.until) + ")"]);
+  var f ='<div class="form"><div class="m" style="margin-bottom:10px">' + (S.adEdit ? "Modifica annuncio" : "Nuovo annuncio in home (visibile a tutti)") + '</div>' +
     '<label>Titolo</label><input id="adt" value="' + esc(d.title) + '">' +
     '<label>Testo</label><textarea id="adx" rows="3">' + esc(d.text) + '</textarea>' +
     '<label>Foto (facoltativa)</label><input id="adp" type="file" accept="image/*" onchange="pickAd(this)">' +
     (d.photo ? '<div class="row"><div class="t"><img src="' + esc(d.photo) + '" alt=""></div><button class="l" onclick="adDraft().photo=\'\';R()">Rimuovi foto</button></div>' : '') +
+    '<label>Durata (conta da quando premi ' + (S.adEdit ? "Salva" : "Pubblica") + ')</label><select id="adu">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (d.dur === o[0] ? " selected" : "") + '>' + o[1] + '</option>'; }).join("") + '</select>' +
     '<div class="chk"><input id="adv" type="checkbox" ' + (d.on ? "checked" : "") + '><label style="margin:0">Visibile nella home</label></div>' +
     '<button onclick="saveAd()">' + (S.adEdit ? "Salva" : "Pubblica") + '</button> ' + (S.adEdit ? '<button class="l" onclick="S.adEdit=null;S.adf=null;R()">Annulla</button>' : '') + '</div>';
   var l = S.ads.map(function (a) {
-    var on = a.on !== false;
-    return '<div class="row"><div class="t">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : "") + '</div><div class="i">' + esc(a.title || a.text || "(solo foto)") + '<div class="m">' + (on ? "visibile" : "nascosto") + '</div></div>' +
-      '<button class="l" onclick="adTog(\'' + a.id + '\')">' + (on ? "Nascondi" : "Mostra") + '</button> <button class="l" onclick="adEd(\'' + a.id + '\')">Modifica</button> <button class="l" onclick="adDel(\'' + a.id + '\')">Elimina</button></div>';
+    var on = a.on !== false, st = !on ? "nascosto" : a.until ? (a.until > Date.now() ? "visibile · scade il " + fmtD(a.until) : "scaduto il " + fmtD(a.until)) : "visibile · sempre";
+    return '<div class="row ar"><div class="t">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : "") + '</div><div class="i">' + esc(a.title || a.text || "(solo foto)") + '<div class="m">' + st + '</div></div>' +
+      '<div class="act"><button class="sm" onclick="adEd(\'' + a.id + '\')">Modifica</button><button class="sm" onclick="adTog(\'' + a.id + '\')">' + (on ? "Nascondi" : "Mostra") + '</button><button class="sm dg" onclick="adDel(\'' + a.id + '\')">Elimina</button></div></div>';
   }).join("");
   return f + (l ? '<div class="form"><div class="m" style="margin-bottom:6px">Annunci pubblicati</div>' + l + '</div>' : '');
 }
@@ -173,7 +183,8 @@ function saveAd() {
   var d = adDraft(); adSync();
   var t = d.title.trim(), x = d.text.trim();
   if (!t && !x && !d.photo) { alert("Inserisci almeno un titolo, un testo o una foto"); return; }
-  var o = {title:t, text:x, photo:d.photo || "", on:d.on};
+  var until = d.dur === "keep" ? ((adOf(S.adEdit) || {}).until || 0) : d.dur === "0" ? 0 : Date.now() + Number(d.dur) * 864e5;
+  var o = {title:t, text:x, photo:d.photo || "", on:d.on, until:until};
   var op = S.adEdit ? db.collection("ads").doc(S.adEdit).update(o) : db.collection("ads").add(Object.assign(o, {created:Date.now()}));
   op.then(function () { S.adEdit = null; S.adf = null; R(); toast("Annuncio salvato"); }).catch(function (e) { alert("Errore: " + e.message); });
 }
