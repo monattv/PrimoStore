@@ -67,9 +67,9 @@ function startIntro() {
   var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
   Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
     var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
-    var step = .2, n = SHOP_NAME.replace(/ /g, "").length, f0 = (n - 1) * step + 1.2;
+    var step = .2, n = SHOP_NAME.replace(/ /g, "").length, f0 = (n - 1) * step + 1.3;
     w.innerHTML = writeSVG(SHOP_NAME, step, f0);
-    var tot = (f0 + 1.8 + 1.6 + .7) * 1000;
+    var tot = (f0 + 2 + .9 + .8) * 1000;
     setTimeout(function () { var i = document.querySelector(".intro"); if (i) i.classList.add("out"); }, tot);
     setTimeout(endIntro, tot + 800); }, 500); });
 }
@@ -202,8 +202,8 @@ function saveAccount() {
 function eyeSVG(ex, ey, f) {
   var d = function (v) { return 'style="--d:' + (f + v).toFixed(2) + 's"'; };
   var P = function (c, dd, v) { return '<path class="fs ' + c + '" pathLength="1" d="' + dd + '" ' + d(v) + '/>'; };
-  return '<g class="face" style="--w:' + (f + 1.8).toFixed(2) + 's" transform="translate(' + ex + ' ' + ey + ')">' +
-    P("", "M2 -38C24 -56 60 -56 86 -38", .9) +
+  return '<g transform="translate(' + ex + ' ' + ey + ')"><g class="face" style="--p:' + f.toFixed(2) + 's;--w:' + (f + 2).toFixed(2) + 's"><g class="mv">' +
+    P("brow", "M2 -38C24 -56 60 -56 86 -38", .9) +
     '<g class="open">' +
       P("", "M-16 8C-8 5-4 2 0 0C20-26 60-26 80 0Q86 4 94 2", 0) +
       P("th", "M6 4C28 22 56 22 76 3", .35) +
@@ -213,19 +213,28 @@ function eyeSVG(ex, ey, f) {
       P("th", "M60 -18q4-8 9-11", 1) + P("th", "M67 -13q6-6 12-7", 1.1) + P("th", "M73 -8q7-4 13-3", 1.2) + P("th", "M17 -17q-3-7-7-9", 1.05) +
     '</g>' +
     '<g class="closed"><path d="M2 2C24 20 56 20 78 2"/><path d="M18 11q-3 7-6 10"/><path d="M40 17v11"/><path d="M62 11q3 7 6 10"/></g>' +
+    P("sm", "M14 42C30 62 54 62 68 40Q72 36 78 38", 1.3) + '</g>' +
     '<g transform="translate(104 -46)"><path class="star" d="M0-9L2.4-2.4 9 0 2.4 2.4 0 9-2.4 2.4-9 0-2.4-2.4Z"/></g>' +
-    '<g transform="translate(90 -64)"><path class="star s2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g></g>';
+    '<g transform="translate(90 -64)"><path class="star s2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g></g></g>';
 }
 function writeSVG(t, step, f0) {
-  var cx = null, x = 30, o = "", n = 0, k, ch, w;
-  try { cx = document.createElement("canvas").getContext("2d"); cx.font = '100px "Great Vibes", cursive'; } catch (e) { cx = null; }
+  var pos = [], len = 0, k, ch;
+  try {   // misura le lettere con lo stesso motore che le disegna
+    var ns = "http://www.w3.org/2000/svg", ms = document.createElementNS(ns, "svg"), tx = document.createElementNS(ns, "text");
+    ms.setAttribute("width", "2000"); ms.setAttribute("height", "300"); ms.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden";
+    tx.setAttribute("y", "125"); tx.style.cssText = 'font:100px "Great Vibes",cursive'; tx.textContent = t;
+    ms.appendChild(tx); document.body.appendChild(ms);
+    for (k = 0; k < t.length; k++) pos.push(tx.getStartPositionOfChar(k).x);
+    len = tx.getComputedTextLength(); document.body.removeChild(ms);
+  } catch (e) { pos = []; len = 0; }
+  if (!len || pos.length !== t.length) { pos = []; for (k = 0; k < t.length; k++) pos.push(k * 40); len = t.length * 40; }
+  var o = "", n = 0, x = 30 + len, fw = 0;
   for (k = 0; k < t.length; k++) {
-    ch = t.charAt(k); w = cx ? cx.measureText(ch).width : 40;
-    if (ch !== " ") { o += '<text x="' + x + '" y="125" style="--d:' + (n * step).toFixed(2) + 's">' + esc(ch) + '</text>'; n++; }
-    x += w;
+    ch = t.charAt(k);
+    if (ch !== " ") { o += '<text x="' + (30 + pos[k]).toFixed(1) + '" y="125" style="--d:' + (n * step).toFixed(2) + 's">' + esc(ch) + '</text>'; n++; }
   }
-  var fw = 0; if (f0 !== undefined) { fw = 150; o += eyeSVG(x + 34, 96, f0); }
-  return '<svg class="wr" viewBox="0 0 ' + (x + 30 + fw) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
+  if (f0 !== undefined) { fw = 170; o += eyeSVG(x + 40, 96, f0); }
+  return '<svg class="wr" viewBox="0 0 ' + (x + 30 + fw).toFixed(1) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
 }
 function hi() {
   var h = $("hi"), t = "Benvenuto, " + S.user.first;
