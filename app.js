@@ -13,11 +13,11 @@ if (typeof firebaseConfig === "undefined" || firebaseConfig.apiKey === "INCOLLA_
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth(), db = firebase.firestore(), FV = firebase.firestore.FieldValue;
-var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false, intro:false, pend:null};
+var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false, intro:false, pend:null, ads:[], adEdit:null, adf:null, g:"", catSet:false, catsReady:false};
 try { S.user = JSON.parse(localStorage.getItem("user")); S.cart = JSON.parse(localStorage.getItem("cart")) || []; } catch (e) {}
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
-var busy = function () { var t = document.activeElement && document.activeElement.tagName; return t === "INPUT" || t === "SELECT"; };
+var busy = function () { var t = document.activeElement && document.activeElement.tagName; return t === "INPUT" || t === "SELECT" || t === "TEXTAREA"; };
 var shoe = function (id) { return S.shoes.filter(function (s) { return s.id === id; })[0]; };
 
 // dati condivisi in tempo reale
@@ -27,14 +27,19 @@ db.collection("shoes").orderBy("created", "desc").onSnapshot(function (q) {
 }, function (e) { console.error(e); });
 db.collection("menu").orderBy("created").onSnapshot(function (q) {
   S.cats = q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.ids = x.ids || []; return x; });
+  S.catsReady = true; applyGender();
   menuR(); if (!busy()) R();
+}, function (e) { console.error(e); });
+db.collection("ads").orderBy("created", "desc").onSnapshot(function (q) {
+  S.ads = q.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+  if (!busy()) R();
 }, function (e) { console.error(e); });
 auth.onAuthStateChanged(function (u) {
   S.admin = !!u; if (u) S.intro = false; if (u && !S.user) S.user = {first:"Admin", last:"", phone:""};
   R(); menuR(); cartR();
 });
 
-var ICO_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
+var ICO_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
 var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
 var ICO_USER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.8 3.7-6 7.5-6s6.7 2.2 7.5 6"/></svg>';
 var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
@@ -48,11 +53,12 @@ function R() {
     return;
   }
   if (!S.user) {
-    var ad = location.hash === "#admin";
-    a.innerHTML = '<div class="box"><div class="logo">' + esc(SHOP_NAME) + '</div>' +
+    var ad = location.hash === "#admin", bx = a.querySelector(".box");
+    if (bx && bx.getAttribute("data-ad") === (ad ? "1" : "0")) return;   // non cancellare quello che sta scrivendo
+    a.innerHTML = '<div class="box" data-ad="' + (ad ? 1 : 0) + '"><div class="logo">' + esc(SHOP_NAME) + '</div>' +
       '<p class="m">' + (ad ? "Accesso gestore" : "Entra nel negozio") + '</p>' +
       (ad ? '<label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password"><button onclick="alogin()">Entra</button>'
-          : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel"><button onclick="login()">Entra</button>') + '</div>';
+          : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel">' + genH("gn", S.g, "S.g=this.value") + '<button onclick="login()">Entra</button>') + '</div>';
     return;
   }
   var n = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
@@ -67,19 +73,19 @@ function startIntro() {
   var fonts = Promise.race([fl(), new Promise(function (r) { setTimeout(r, 3500); })]);
   Promise.all([loaded, fonts]).then(function () { setTimeout(function () {
     var w = document.querySelector(".intro .wrap"); if (!S.intro || !w) return;
-    var step = .19, n = SHOP_NAME.replace(/ /g, "").length;
+    var step = .17, n = SHOP_NAME.replace(/ /g, "").length;
     var I = function () { var i = document.querySelector(".intro"); return S.intro && i ? i : null; };
-    var t1 = ((n - 1) * step + 1.1 + .6) * 1000;               // fine scrittura + pausa
-    var t2 = t1 + 900 + (.2 + 1.9 + .6 + .6 + 1.2) * 1000;             // fine occhiolino + pausa
+    var t1 = ((n - 1) * step + .9 + .6) * 1000;                // fine scrittura + pausa
+    var t2 = t1 + 700 + (.1 + 1.7 + .4 + .4 + 1.0) * 1000;             // fine occhiolino + pausa
     w.innerHTML = writeSVG(SHOP_NAME, step);                   // 1) "Primo Store" a penna
     setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t1);
     setTimeout(function () {                                   // 2) la scritta sparisce, spunta l'occhiolino
       var i = I(); if (!i) return;
-      w.innerHTML = '<svg class="wr eo" viewBox="-45 -90 168 160" xmlns="http://www.w3.org/2000/svg">' + eyeSVG(0, 0, .2) + '</svg>';
+      w.innerHTML = '<svg class="wr eo" viewBox="-45 -90 168 160" xmlns="http://www.w3.org/2000/svg">' + eyeSVG(0, 0, .1) + '</svg>';
       i.style.transition = "none"; i.classList.remove("out"); void i.offsetWidth; i.style.transition = "";
-    }, t1 + 900);
+    }, t1 + 700);
     setTimeout(function () { var i = I(); if (i) i.classList.add("out"); }, t2);
-    setTimeout(endIntro, t2 + 800); }, 500); });                // 3) schermata di accesso
+    setTimeout(endIntro, t2 + 600); }, 500); });                // 3) schermata di accesso
 }
 function endIntro() { if (!S.intro) return; S.intro = false; R(); }
 
@@ -87,10 +93,10 @@ function shopH() {
   if (!S.ready) return '<p class="m" style="text-align:center">Caricamento…</p>';
   var c = S.cats.filter(function (x) { return x.id === S.cat; })[0];
   var list = c ? S.shoes.filter(function (s) { return c.ids.indexOf(s.id) > -1; }) : S.shoes;
-  var h = '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>' + NOTE;
+  var h = adsH() + '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>' + NOTE;
   if (!list.length) return h + '<p class="m" style="text-align:center">Nessuna scarpa qui per ora.</p>';
   return h + '<div class="grid">' + list.map(function (s, i) {
-    return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 60) + 'ms"><div class="ph" onclick="this.parentNode.classList.toggle(\'ex\')">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div>' +
+    return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 40) + 'ms"><div class="ph" onclick="this.parentNode.classList.toggle(\'ex\')">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div>' +
       '<div class="tt">' + esc(s.name) + '</div><div class="pr">€ ' + Number(s.price).toFixed(2) + '</div>' +
       (s.avail ? '<button class="go" onclick="add(\'' + s.id + '\',this)"><span class="lb"><span class="d">Aggiungi al carrello</span><span class="mb">Aggiungi</span></span>' + VAN + '</button>' : '<div class="m">Non disponibile</div>') + '</div>';
   }).join("") + '</div>';
@@ -115,8 +121,65 @@ function admin() {
     return '<div class="row"><div class="t">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div><div class="i">' + esc(s.name) + '<div class="m">€ ' + Number(s.price).toFixed(2) + ' · ' + (s.avail ? "disponibile" : "esaurita") + '</div></div>' +
       '<button class="l" onclick="tog(\'' + s.id + '\')">' + (s.avail ? "Esaurita" : "Disponibile") + '</button> <button class="l" onclick="ed(\'' + s.id + '\')">Modifica</button> <button class="l" onclick="del(\'' + s.id + '\')">Elimina</button></div>';
   }).join("");
-  return f + m + (l || '<p class="m">Nessuna scarpa. Aggiungine una sopra.</p>');
+  return adAdmin() + f + m + (l || '<p class="m">Nessuna scarpa. Aggiungine una sopra.</p>');
 }
+
+// ---------- annunci in home ----------
+function adsH() {
+  var l = S.ads.filter(function (a) { return a.on !== false; });
+  return l.map(function (a, i) {
+    return '<div class="ad" style="animation-delay:' + (i * 40) + 'ms">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : '') +
+      (a.title || a.text ? '<div class="adb">' + (a.title ? '<b>' + esc(a.title) + '</b>' : '') + (a.text ? '<p>' + esc(a.text).replace(/\n/g, "<br>") + '</p>' : '') + '</div>' : '') + '</div>';
+  }).join("");
+}
+function genH(nm, v, on) {
+  return '<label>Sono</label><div class="gen">' + [["uomo", "Uomo"], ["donna", "Donna"]].map(function (x) {
+    return '<label class="gp"><input type="radio" name="' + nm + '" value="' + x[0] + '"' + (v === x[0] ? " checked" : "") + (on ? ' onchange="' + on + '"' : "") + '><span>' + x[1] + '</span></label>';
+  }).join("") + '</div>';
+}
+function adOf(id) { return S.ads.filter(function (a) { return a.id === id; })[0]; }
+function adDraft() {
+  if (!S.adf) { var a = S.adEdit ? adOf(S.adEdit) : null; S.adf = a ? {title:a.title || "", text:a.text || "", photo:a.photo || "", on:a.on !== false} : {title:"", text:"", photo:"", on:true}; }
+  return S.adf;
+}
+function adSync() { var d = S.adf; if (d && $("adt")) { d.title = $("adt").value; d.text = $("adx").value; d.on = $("adv").checked; } return d; }
+function adAdmin() {
+  adSync(); var d = adDraft();
+  var f = '<div class="form"><div class="m" style="margin-bottom:10px">' + (S.adEdit ? "Modifica annuncio" : "Nuovo annuncio in home (visibile a tutti)") + '</div>' +
+    '<label>Titolo</label><input id="adt" value="' + esc(d.title) + '">' +
+    '<label>Testo</label><textarea id="adx" rows="3">' + esc(d.text) + '</textarea>' +
+    '<label>Foto (facoltativa)</label><input id="adp" type="file" accept="image/*" onchange="pickAd(this)">' +
+    (d.photo ? '<div class="row"><div class="t"><img src="' + esc(d.photo) + '" alt=""></div><button class="l" onclick="adDraft().photo=\'\';R()">Rimuovi foto</button></div>' : '') +
+    '<div class="chk"><input id="adv" type="checkbox" ' + (d.on ? "checked" : "") + '><label style="margin:0">Visibile nella home</label></div>' +
+    '<button onclick="saveAd()">' + (S.adEdit ? "Salva" : "Pubblica") + '</button> ' + (S.adEdit ? '<button class="l" onclick="S.adEdit=null;S.adf=null;R()">Annulla</button>' : '') + '</div>';
+  var l = S.ads.map(function (a) {
+    var on = a.on !== false;
+    return '<div class="row"><div class="t">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : "") + '</div><div class="i">' + esc(a.title || a.text || "(solo foto)") + '<div class="m">' + (on ? "visibile" : "nascosto") + '</div></div>' +
+      '<button class="l" onclick="adTog(\'' + a.id + '\')">' + (on ? "Nascondi" : "Mostra") + '</button> <button class="l" onclick="adEd(\'' + a.id + '\')">Modifica</button> <button class="l" onclick="adDel(\'' + a.id + '\')">Elimina</button></div>';
+  }).join("");
+  return f + (l ? '<div class="form"><div class="m" style="margin-bottom:6px">Annunci pubblicati</div>' + l + '</div>' : '');
+}
+function pickAd(inp) {
+  var file = inp.files[0]; if (!file) return;
+  var d = adDraft(); adSync();
+  var r = new FileReader();
+  r.onload = function () { var im = new Image(); im.onload = function () {
+    var k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement("canvas");
+    c.width = im.width * k; c.height = im.height * k; var x = c.getContext("2d"); x.fillStyle = "#ffffff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+    d.photo = c.toDataURL("image/jpeg", .75); R(); }; im.src = r.result; };
+  r.readAsDataURL(file);
+}
+function saveAd() {
+  var d = adDraft(); adSync();
+  var t = d.title.trim(), x = d.text.trim();
+  if (!t && !x && !d.photo) { alert("Inserisci almeno un titolo, un testo o una foto"); return; }
+  var o = {title:t, text:x, photo:d.photo || "", on:d.on};
+  var op = S.adEdit ? db.collection("ads").doc(S.adEdit).update(o) : db.collection("ads").add(Object.assign(o, {created:Date.now()}));
+  op.then(function () { S.adEdit = null; S.adf = null; R(); toast("Annuncio salvato"); }).catch(function (e) { alert("Errore: " + e.message); });
+}
+function adEd(id) { S.adEdit = id; S.adf = null; R(); window.scrollTo(0, 0); }
+function adDel(id) { if (confirm("Eliminare questo annuncio?")) { if (S.adEdit === id) { S.adEdit = null; S.adf = null; } db.collection("ads").doc(id).delete(); } }
+function adTog(id) { db.collection("ads").doc(id).update({on:adOf(id).on === false}); }
 
 // ---------- menu laterale e carrello ----------
 function menuR() {
@@ -174,7 +237,7 @@ function pickSz(el, v) {
 }
 function confirmAdd(btn) {
   if (!S.pend || !S.pend.size) return;
-  addItem(S.pend.id, S.pend.size); fly(btn); setTimeout(closeAll, 1000);
+  addItem(S.pend.id, S.pend.size); fly(btn); setTimeout(closeAll, 800);
 }
 function fly(b) {
   b.classList.remove("run"); void b.offsetWidth; b.classList.add("run");
@@ -183,7 +246,7 @@ function fly(b) {
   p.className = "pk"; p.style.left = (a.left + a.width / 2 - 9) + "px"; p.style.top = a.top + "px"; document.body.appendChild(p);
   var dx = c.left + c.width / 2 - a.left - a.width / 2, dy = c.top + c.height / 2 - a.top - 9;
   p.animate([{transform:"translate(0,0) scale(1)", opacity:0, offset:0}, {transform:"translate(0,-14px) scale(1)", opacity:1, offset:.2},
-    {transform:"translate(" + dx + "px," + dy + "px) scale(.3)", opacity:.3, offset:1}], {duration:900, delay:700, easing:"ease-in", fill:"both"}).onfinish = function () {
+    {transform:"translate(" + dx + "px," + dy + "px) scale(.3)", opacity:.3, offset:1}], {duration:700, delay:500, easing:"ease-in", fill:"both"}).onfinish = function () {
     p.remove(); t.animate([{transform:"scale(1)"}, {transform:"scale(1.12)"}, {transform:"scale(1)"}], {duration:350});
     var g = $("bd"); if (g) { g.classList.remove("b"); void g.offsetWidth; g.classList.add("b"); } };
 }
@@ -193,16 +256,16 @@ function toast(t) { var e = $("toast"); e.textContent = t; e.className = "s"; cl
 // ---------- account ----------
 function openAccount() {
   $("sheet").innerHTML = '<div class="shh"><b>Il tuo account</b><button class="l" onclick="closeAll()">Chiudi</button></div><div class="m" style="margin-bottom:14px">Modifica i tuoi dati</div>' +
-    '<label>Nome</label><input id="an" value="' + esc(S.user.first) + '"><label>Numero di telefono</label><input id="ap" type="tel" value="' + esc(S.user.phone) + '">' +
+    '<label>Nome</label><input id="an" value="' + esc(S.user.first) + '"><label>Numero di telefono</label><input id="ap" type="tel" value="' + esc(S.user.phone) + '">' + genH("ag", S.user.gender, "") +
     '<button class="pri" style="width:100%" onclick="saveAccount()">Salva</button>';
   document.body.classList.add("so");
 }
 function saveAccount() {
-  var f = $("an").value.trim(), p = $("ap").value.replace(/[\s\-+]/g, "");
+  var f = $("an").value.trim(), p = $("ap").value.replace(/[\s\-+]/g, ""), g = (document.querySelector('input[name="ag"]:checked') || {}).value || S.user.gender || "";
   if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
-  S.user = {first:f, last:"", phone:p};
+  S.user = {first:f, last:"", phone:p, gender:g};
   try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
-  db.collection("clients").doc(p).set({first:f, last:"", phone:p, last_login:Date.now()}).catch(function () {});
+  db.collection("clients").doc(p).set({first:f, last:"", phone:p, gender:g, last_login:Date.now()}).catch(function () {});
   closeAll(); R(); cartR(); toast("Dati aggiornati");
 }
 
@@ -211,7 +274,7 @@ var LASH = ["M11 -10.5q-5-5-10-5.5", "M22 -15q-3-7-8-9.5", "M33 -18.5q-1-8-4-11.
 function eyeSVG(ex, ey, f) {
   var d = function (v) { return 'style="--d:' + (f + v).toFixed(2) + 's"'; };
   var P = function (c, dd, v) { return '<path class="fs ' + c + '" pathLength="1" d="' + dd + '" ' + d(v) + '/>'; };
-  return '<g transform="translate(' + ex + ' ' + ey + ')"><g class="face" style="--p:' + f.toFixed(2) + 's;--w:' + (f + 1.9).toFixed(2) + 's"><g class="mv">' +
+  return '<g transform="translate(' + ex + ' ' + ey + ')"><g class="face" style="--p:' + f.toFixed(2) + 's;--w:' + (f + 1.7).toFixed(2) + 's"><g class="mv">' +
     P("brow", "M2 -38C24 -56 60 -56 86 -38", .9) +
     '<g class="open">' +
       P("", "M-16 8C-8 5-4 2 0 0C20-26 60-26 80 0Q86 4 94 2", 0) +
@@ -247,33 +310,53 @@ function writeSVG(t, step, f0) {
   return '<svg class="wr" viewBox="0 0 ' + (x + 30 + fw).toFixed(1) + ' 200" xmlns="http://www.w3.org/2000/svg">' + o + '</svg>';
 }
 function hi() {
-  var firstName = S.user.first ? S.user.first.trim() : "";
-  var lastChar = firstName.slice(-1).toLowerCase();
-  
-  // Se il nome finisce con 'a', usa "Benvenuta", altrimenti "Benvenuto"
-  var welcomeText = (lastChar === 'a') ? "Benvenuta" : "Benvenuto";
-  
-  var h = $("hi"), t = welcomeText + ", " + firstName;
+  var u = S.user || {}, firstName = u.first ? u.first.trim() : "", welcomeText;
+  // genere scelto all'accesso; se manca (vecchi accessi) si deduce dal nome
+  if (u.gender === "donna") welcomeText = "Benvenuta";
+  else if (u.gender === "uomo") welcomeText = "Benvenuto";
+  else welcomeText = firstName.slice(-1).toLowerCase() === "a" ? "Benvenuta" : "Benvenuto";
+
+  var h = $("hi"), t = welcomeText + ", " + firstName, k = hi.k = (hi.k || 0) + 1;
+  clearTimeout(hi.t);
   var go = function () {
-    var dur = t.length * 110 + 2800;
-    h.innerHTML = writeSVG(t, .11); h.style.animationDuration = dur + "ms"; h.className = ""; void h.offsetWidth; h.className = "show";
-    setTimeout(function () { h.className = ""; }, dur + 100);
+    if (k !== hi.k) return;                                    // saltato prima ancora di partire
+    var dur = t.length * 90 + 2400;
+    h.style.transition = h.style.opacity = "";
+    h.innerHTML = writeSVG(t, .09); h.style.animationDuration = dur + "ms"; h.className = ""; void h.offsetWidth; h.className = "show";
+    hi.t = setTimeout(function () { h.className = ""; }, dur + 100);
   };
+  h.onclick = skipHi;
   try { Promise.race([document.fonts.load('100px "Great Vibes"'), new Promise(function (r) { setTimeout(r, 1500); })]).then(go); } catch (e) { go(); }
 }
+function skipHi() {                                            // un tocco chiude il benvenuto, come l'intro
+  var h = $("hi"); hi.k = (hi.k || 0) + 1; clearTimeout(hi.t);
+  if (h.className !== "show") return;
+  var o = getComputedStyle(h).opacity;
+  h.className = ""; h.style.transition = "none"; h.style.opacity = o; void h.offsetWidth;
+  h.style.transition = "opacity .2s"; h.style.opacity = 0;
+  hi.t = setTimeout(function () { h.style.transition = h.style.opacity = ""; }, 250);
+}
+// le clienti donna aprono il negozio nella categoria "Donna" (se esiste nel menu)
+function applyGender() {
+  if (S.catSet || !S.user || S.user.gender !== "donna") return;
+  var c = S.cats.filter(function (x) { return /^donn[ae]$/i.test(String(x.name).trim()); })[0];
+  if (c) S.cat = c.id;
+  if (c || S.catsReady) S.catSet = true;
+}
 function login() {
-  var f = $("fn").value.trim(), l = "", p = $("ph").value.replace(/[\s\-+]/g, "");
+  var f = $("fn").value.trim(), l = "", p = $("ph").value.replace(/[\s\-+]/g, ""), g = S.g || (document.querySelector('input[name="gn"]:checked') || {}).value || "";
   if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
-  S.user = {first:f, last:l, phone:p};
+  if (!g) { alert("Seleziona uomo o donna"); return; }
+  S.user = {first:f, last:l, phone:p, gender:g};
   try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
-  db.collection("clients").doc(p).set({first:f, last:l, phone:p, last_login:Date.now()}).catch(function () {});
-  S.view = "shop"; R(); cartR(); hi();
+  db.collection("clients").doc(p).set({first:f, last:l, phone:p, gender:g, last_login:Date.now()}).catch(function () {});
+  S.view = "shop"; S.cat = "all"; S.catSet = false; applyGender(); menuR(); R(); cartR(); hi();
 }
 function alogin() {
   auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value).then(function () { S.view = "admin"; location.hash = ""; hi(); }).catch(function () { alert("Credenziali non valide"); });
 }
-function logout() { S.user = null; S.admin = false; S.view = "shop"; try { localStorage.removeItem("user"); } catch (e) {} auth.signOut(); closeAll(); R(); }
-function go(v) { S.view = v; S.edit = null; S.photo = ""; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
+function logout() { S.user = null; S.admin = false; S.view = "shop"; S.cat = "all"; S.catSet = false; S.g = ""; try { localStorage.removeItem("user"); } catch (e) {} auth.signOut(); closeAll(); R(); }
+function go(v) { S.view = v; S.edit = null; S.photo = ""; S.adEdit = null; S.adf = null; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
 
 // ---------- dashboard: prodotti ----------
 function pick(inp) {
