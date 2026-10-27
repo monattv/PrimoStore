@@ -1,17 +1,8 @@
-// ====== CONFIGURAZIONE ======
-var firebaseConfig = {
-  apiKey: "AIzaSyA2Om3z06tECooXjlhxv1OlAcyAlIQvWkA",
-  authDomain: "mio-catalogo-prodotti.firebaseapp.com",
-  projectId: "mio-catalogo-prodotti",
-  appId: "1:1042772614624:web:c347db6e68aa33fcd75f85"
-};
-var SHOP_PHONE = "393518521113"; // WhatsApp per gli ordini (prefisso senza +)
-var SHOP_NAME = "Primo-Store";
-// ============================
+// La configurazione (Firebase, WhatsApp, nome negozio) è nel file config.js
 
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth(), db = firebase.firestore(), FV = firebase.firestore.FieldValue;
-var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false, sel:{}};
+var S = {user:null, admin:false, shoes:[], cats:[], cat:"all", view:"shop", edit:null, photo:"", cart:[], ready:false, intro:false, pend:null};
 try { S.user = JSON.parse(localStorage.getItem("user")); S.cart = JSON.parse(localStorage.getItem("cart")) || []; } catch (e) {}
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
@@ -28,43 +19,47 @@ db.collection("menu").orderBy("created").onSnapshot(function (q) {
   menuR(); if (!busy()) R();
 }, function (e) { console.error(e); });
 auth.onAuthStateChanged(function (u) {
-  S.admin = !!u; if (u && !S.user) S.user = {first:"Admin", last:"", phone:""};
+  S.admin = !!u; if (u) S.intro = false; if (u && !S.user) S.user = {first:"Admin", last:"", phone:""};
   R(); menuR(); cartR();
 });
 
+var ICO_MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
+var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
 var VAN = '<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
 var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.</div>';
 
 // ---------- schermate ----------
 function R() {
-  var a = $("app"); document.body.classList.toggle("in", !!S.user);
+  var a = $("app"); document.body.classList.toggle("in", !!S.user && !S.intro);
+  if (S.intro) {
+    if (!a.querySelector(".intro")) a.innerHTML = '<div class="bg"><i></i><i></i></div><div class="intro" onclick="endIntro()"><span class="script">' + esc(SHOP_NAME) + '</span></div>';
+    return;
+  }
   if (!S.user) {
     var ad = location.hash === "#admin";
-    a.innerHTML = '<div class="bg"><i></i><i></i><i></i></div><div class="box"><div class="logo">' + SHOP_NAME + '</div>' +
+    a.innerHTML = '<div class="bg"><i></i><i></i><i></i></div><div class="box"><div class="logo">' + esc(SHOP_NAME) + '</div>' +
       '<p class="m">' + (ad ? "Accesso gestore" : "Entra nel negozio") + '</p>' +
       (ad ? '<label>Email</label><input id="em" type="email"><label>Password</label><input id="pw" type="password"><button onclick="alogin()">Entra</button>'
           : '<label>Nome</label><input id="fn" autocomplete="given-name"><label>Cognome</label><input id="ln" autocomplete="family-name"><label>Numero di telefono</label><input id="ph" type="tel" autocomplete="tel"><button onclick="login()">Entra</button>') + '</div>';
     return;
   }
   var n = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
-  var top = '<header><button class="ic" onclick="openM()">☰</button><h1>' + SHOP_NAME + '</h1><span class="hello">Ciao, ' + esc(S.user.first) + '</span><span class="sp"></span>' +
-    (S.admin ? '<button class="l" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Negozio") + '</button>' : '') +
-    '<button class="ic" id="cbtn" onclick="openC()">Carrello<b id="bd">' + n + '</b></button><button class="l" onclick="logout()">Esci</button></header>';
-  a.innerHTML = top + (S.view === "admin" && S.admin ? admin() : shopH());
+  a.innerHTML = '<header><button class="ic" onclick="openM()" aria-label="Menu">' + ICO_MENU + '</button><h1>' + esc(SHOP_NAME) + '</h1>' +
+    '<button class="ic" id="cbtn" onclick="openC()" aria-label="Carrello">' + ICO_BAG + '<b id="bd"' + (n ? '' : ' style="display:none"') + '>' + n + '</b></button></header>' +
+    (S.view === "admin" && S.admin ? admin() : shopH());
 }
+function endIntro() { if (!S.intro) return; S.intro = false; R(); }
 
 function shopH() {
-  if (!S.ready) return '<p class="m">Caricamento…</p>';
+  if (!S.ready) return '<p class="m" style="text-align:center">Caricamento…</p>';
   var c = S.cats.filter(function (x) { return x.id === S.cat; })[0];
   var list = c ? S.shoes.filter(function (s) { return c.ids.indexOf(s.id) > -1; }) : S.shoes;
   var h = '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>' + NOTE;
-  if (!list.length) return h + '<p class="m">Nessuna scarpa qui per ora.</p>';
+  if (!list.length) return h + '<p class="m" style="text-align:center">Nessuna scarpa qui per ora.</p>';
   return h + '<div class="grid">' + list.map(function (s, i) {
-    var sz = (s.sizes || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
-    return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 70) + 'ms"><div class="ph">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "nessuna foto") + '</div>' +
-      '<div class="n"><span>' + esc(s.name) + '</span><span>€ ' + Number(s.price).toFixed(2) + '</span></div>' +
-      (s.avail ? (sz.length ? '<div class="sizes" id="sz_' + s.id + '">' + sz.map(function (x) { return '<button class="sq ' + (S.sel[s.id] === x ? "on" : "") + '" onclick="selSz(\'' + s.id + '\',this,\'' + esc(x) + '\')">' + esc(x) + '</button>'; }).join("") + '</div>' : '<div style="height:8px"></div>') +
-        '<button class="go" onclick="add(\'' + s.id + '\',this)"><span class="lb">Aggiungi al carrello</span>' + VAN + '</button>' : '<div class="m">Non disponibile</div>') + '</div>';
+    return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 60) + 'ms"><div class="ph" onclick="this.parentNode.classList.toggle(\'ex\')">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div>' +
+      '<div class="tt">' + esc(s.name) + '</div><div class="pr">€ ' + Number(s.price).toFixed(2) + '</div>' +
+      (s.avail ? '<button class="go" onclick="add(\'' + s.id + '\',this)"><span class="lb"><span class="d">Aggiungi al carrello</span><span class="mb">Aggiungi</span></span>' + VAN + '</button>' : '<div class="m">Non disponibile</div>') + '</div>';
   }).join("") + '</div>';
 }
 
@@ -93,19 +88,21 @@ function admin() {
 // ---------- menu laterale e carrello ----------
 function menuR() {
   var items = [{id:"all", name:"Tutto"}].concat(S.cats);
-  $("menu").innerHTML = '<div class="logo" style="text-align:left;font-size:18px;margin-bottom:18px">' + SHOP_NAME + '</div>' +
-    items.map(function (c) { return '<button class="mi ' + (S.cat === c.id ? "on" : "") + '" onclick="pickCat(\'' + c.id + '\')">' + esc(c.name) + '</button>'; }).join("");
+  $("menu").innerHTML = '<div class="logo">' + esc(SHOP_NAME) + '</div>' +
+    items.map(function (c) { return '<button class="mi ' + (S.cat === c.id && S.view === "shop" ? "on" : "") + '" onclick="pickCat(\'' + c.id + '\')">' + esc(c.name) + '</button>'; }).join("") +
+    '<div class="mf">' + (S.admin ? '<button class="mi" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Torna al negozio") + '</button>' : '') +
+    '<button class="mi" onclick="logout()">Esci</button></div>';
 }
 function pickCat(id) { S.cat = id; S.view = "shop"; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
 function openM() { document.body.classList.add("mo"); }
 function openC() { document.body.classList.add("co"); }
-function closeAll() { document.body.classList.remove("mo", "co"); }
+function closeAll() { document.body.classList.remove("mo", "co", "so"); }
 
 function cartR() {
   var tot = 0, lines = [], rows = "";
-  S.cart = S.cart.filter(function (c) { return shoe(c.id); });
+  if (S.ready) S.cart = S.cart.filter(function (c) { return shoe(c.id); });
   S.cart.forEach(function (c, i) {
-    var s = shoe(c.id), p = Number(s.price) * c.q; tot += p;
+    var s = shoe(c.id); if (!s) return; var p = Number(s.price) * c.q; tot += p;
     lines.push("- " + s.name + (c.size ? " (taglia " + c.size + ")" : "") + " x" + c.q + " = € " + p.toFixed(2));
     rows += '<div class="ci"><div class="t">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div><div style="flex:1">' + esc(s.name) +
       '<div class="m">' + (c.size ? "Taglia " + esc(c.size) + " · " : "") + '€ ' + Number(s.price).toFixed(2) + '</div>' +
@@ -117,15 +114,34 @@ function cartR() {
     (rows || '<p class="m">Il carrello è vuoto.</p>') +
     (rows ? '<div class="tot"><span>Totale</span><b>€ ' + tot.toFixed(2) + '</b></div><a class="wa" href="https://wa.me/' + SHOP_PHONE + '?text=' + msg + '" target="_blank" rel="noopener">Ordina su WhatsApp</a><p class="m" style="text-align:center">Colori, varianti e pagamento si concordano in chat.</p>' : '');
   try { localStorage.setItem("cart", JSON.stringify(S.cart)); } catch (e) {}
-  var b = $("bd"); if (b) b.textContent = S.cart.reduce(function (t, c) { return t + c.q; }, 0);
+  var b = $("bd"), nn = S.cart.reduce(function (t, c) { return t + c.q; }, 0); if (b) { b.textContent = nn; b.style.display = nn ? "" : "none"; }
 }
-function selSz(id, el, v) { S.sel[id] = v; var p = el.parentNode.children; for (var i = 0; i < p.length; i++) p[i].classList.remove("on"); el.classList.add("on"); }
+function sizesOf(s) { return (s.sizes || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean); }
 function add(id, btn) {
-  var size = S.sel[id] || "";
-  if ($("sz_" + id) && !size) { toast("Scegli la taglia"); return; }
+  var sz = sizesOf(shoe(id));
+  if (sz.length) { openSheet(id, sz); return; }
+  addItem(id, ""); fly(btn);
+}
+function addItem(id, size) {
   var f = S.cart.filter(function (c) { return c.id === id && c.size === size; })[0];
   if (f) f.q++; else S.cart.push({id:id, size:size, q:1});
-  cartR(); toast("Aggiunto al carrello"); fly(btn);
+  cartR(); toast("Aggiunto al carrello");
+}
+function openSheet(id, sz) {
+  S.pend = {id:id, size:""};
+  $("sheet").innerHTML = '<div class="shh"><b>' + esc(shoe(id).name) + '</b><button class="l" onclick="closeAll()">Chiudi</button></div><div class="m">Scegli la taglia</div>' +
+    '<div class="sizes">' + sz.map(function (x) { return '<button class="sq" onclick="pickSz(this,\'' + esc(x) + '\')">' + esc(x) + '</button>'; }).join("") + '</div>' +
+    '<button class="go pri" id="sgo" disabled onclick="confirmAdd(this)"><span class="lb">Aggiungi al carrello</span>' + VAN + '</button>';
+  document.body.classList.add("so");
+}
+function pickSz(el, v) {
+  S.pend.size = v; var p = el.parentNode.children;
+  for (var i = 0; i < p.length; i++) p[i].classList.remove("on");
+  el.classList.add("on"); $("sgo").disabled = false;
+}
+function confirmAdd(btn) {
+  if (!S.pend || !S.pend.size) return;
+  addItem(S.pend.id, S.pend.size); fly(btn); setTimeout(closeAll, 1000);
 }
 function fly(b) {
   b.classList.remove("run"); void b.offsetWidth; b.classList.add("run");
@@ -142,7 +158,7 @@ function qty(i, d) { S.cart[i].q += d; if (S.cart[i].q < 1) S.cart.splice(i, 1);
 function toast(t) { var e = $("toast"); e.textContent = t; e.className = "s"; clearTimeout(toast.t); toast.t = setTimeout(function () { e.className = ""; }, 1800); }
 
 // ---------- accesso ----------
-function hi() { var h = $("hi"); h.innerHTML = '<span>Ciao, ' + esc(S.user.first) + '</span>'; h.className = ""; void h.offsetWidth; h.className = "show"; setTimeout(function () { h.className = ""; }, 2700); }
+function hi() { var h = $("hi"); h.innerHTML = '<span>Benvenuto, ' + esc(S.user.first) + '</span>'; h.className = ""; void h.offsetWidth; h.className = "show"; setTimeout(function () { h.className = ""; }, 2700); }
 function login() {
   var f = $("fn").value.trim(), l = $("ln").value.trim(), p = $("ph").value.replace(/[\s\-+]/g, "");
   if (!f || !l || p.length < 8) { alert("Inserisci nome, cognome e un numero valido"); return; }
@@ -155,7 +171,7 @@ function alogin() {
   auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value).then(function () { S.view = "admin"; location.hash = ""; hi(); }).catch(function () { alert("Credenziali non valide"); });
 }
 function logout() { S.user = null; S.admin = false; S.view = "shop"; try { localStorage.removeItem("user"); } catch (e) {} auth.signOut(); closeAll(); R(); }
-function go(v) { S.view = v; S.edit = null; S.photo = ""; R(); }
+function go(v) { S.view = v; S.edit = null; S.photo = ""; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
 
 // ---------- dashboard: prodotti ----------
 function pick(inp) {
@@ -163,7 +179,7 @@ function pick(inp) {
   var r = new FileReader();
   r.onload = function () { var im = new Image(); im.onload = function () {
     var k = Math.min(1, 700 / Math.max(im.width, im.height)), c = document.createElement("canvas");
-    c.width = im.width * k; c.height = im.height * k; c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    c.width = im.width * k; c.height = im.height * k; var x = c.getContext("2d"); x.fillStyle = "#ffffff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
     S.photo = c.toDataURL("image/jpeg", .75); R(); }; im.src = r.result; };
   r.readAsDataURL(file);
 }
@@ -185,4 +201,5 @@ function delCat(id) { if (confirm("Eliminare la categoria?")) { if (S.cat === id
 function tcat(cid, sid, on) { db.collection("menu").doc(cid).update({ids: on ? FV.arrayUnion(sid) : FV.arrayRemove(sid)}); }
 
 window.addEventListener("hashchange", R);
+S.intro = !S.user; if (S.intro) setTimeout(endIntro, 4400);
 R();
