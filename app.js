@@ -18,6 +18,51 @@ try { S.user = JSON.parse(localStorage.getItem("user")); S.cart = JSON.parse(loc
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
 var busy = function () { var t = document.activeElement && document.activeElement.tagName; return t === "INPUT" || t === "SELECT" || t === "TEXTAREA"; };
+// ---------- suoni (sintetizzati, nessun file da caricare) ----------
+var SND = {on:true, ctx:null, t:0};
+try { SND.on = localStorage.getItem("snd") !== "0"; } catch (e) {}
+var SFX = {   // [frequenza, ritardo, durata, onda, volume, frequenza finale]
+  tap:[[620,0,.05,"sine",.07,430]],
+  open:[[392,0,.09,"sine",.08],[587,.07,.15,"sine",.08]],
+  close:[[587,0,.08,"sine",.07],[392,.06,.13,"sine",.07]],
+  add:[[660,0,.09,"triangle",.11],[990,.08,.2,"triangle",.11]],
+  pick:[[740,0,.05,"sine",.08]],
+  minus:[[330,0,.09,"triangle",.09,260]],
+  notify:[[880,0,.55,"sine",.1],[1318,0,.55,"sine",.05],[880,.2,.55,"sine",.08]],
+  ok:[[523,0,.12,"sine",.09],[659,.1,.12,"sine",.09],[784,.2,.25,"sine",.09]],
+  err:[[190,0,.16,"square",.045],[140,.12,.22,"square",.045]],
+  bye:[[587,0,.1,"sine",.08],[440,.09,.1,"sine",.08],[330,.18,.22,"sine",.08]]
+};
+function sfx(k) {
+  SND.t = Date.now();
+  if (!SND.on) return;
+  try {
+    var C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+    if (!SND.ctx) SND.ctx = new C();
+    var c = SND.ctx; if (c.state === "suspended") c.resume();
+    (SFX[k] || SFX.tap).forEach(function (n) {
+      var t0 = c.currentTime + n[1], o = c.createOscillator(), g = c.createGain();
+      o.type = n[3]; o.frequency.setValueAtTime(n[0], t0);
+      if (n[5]) o.frequency.exponentialRampToValueAtTime(n[5], t0 + n[2]);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(n[4], t0 + .006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[2]);
+      o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + n[2] + .02);
+    });
+  } catch (e) {}
+}
+function warn(m) { sfx("err"); alert(m); }
+function toggleSnd() {
+  SND.on = !SND.on; try { localStorage.setItem("snd", SND.on ? "1" : "0"); } catch (e) {}
+  var b = $("sndb"); if (b) b.textContent = SND.on ? "Attivi" : "Disattivati";
+  if (SND.on) sfx("ok");
+}
+// suono "tap" su ogni tasto, salvo che un'azione abbia già emesso il suo suono
+document.addEventListener("click", function (e) {
+  if (Date.now() - SND.t < 150) return;
+  var t = e.target.closest && e.target.closest("button,a,.ph,.chip,.gp,.intro,#hi");
+  if (t && !t.disabled) sfx("tap");
+}, false);
+
 var shoe = function (id) { return S.shoes.filter(function (s) { return s.id === id; })[0]; };
 
 // dati condivisi in tempo reale
@@ -31,22 +76,29 @@ db.collection("menu").orderBy("created").onSnapshot(function (q) {
   menuR(); if (!busy()) R();
 }, function (e) { console.error(e); });
 db.collection("ads").orderBy("created", "desc").onSnapshot(function (q) {
+  var before = S.adsInit ? unread().length : -1;
   S.ads = q.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
+  if (S.adsInit && unread().length > before && document.body.classList.contains("in")) sfx("notify");
+  S.adsInit = true;
   if (!busy()) R();
+  if (S.sh === "n" && document.body.classList.contains("so")) notifR();
 }, function (e) { console.error(e); });
 auth.onAuthStateChanged(function (u) {
   S.admin = !!u; if (u) S.intro = false; if (u && !S.user) S.user = {first:"Admin", last:"", phone:""};
   R(); menuR(); cartR();
 });
 
-var ICO_MENU = '<svg width="24" height="24" viewBox="0 0 24 24" fill="#000" style="fill:#000"><rect x="3" y="5.2" width="18" height="2.4" rx="1.2"/><rect x="3" y="10.8" width="18" height="2.4" rx="1.2"/><rect x="3" y="16.4" width="11" height="2.4" rx="1.2"/></svg>';
+var ICO_MENU = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="5.2" width="18" height="2.4" rx="1.2"/><rect x="3" y="10.8" width="18" height="2.4" rx="1.2"/><rect x="3" y="16.4" width="11" height="2.4" rx="1.2"/></svg>';
 var ICO_IG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0"/><path d="M16.5 7.5v.01"/></svg>';
 var ICO_WA = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>';
 var ICO_BAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 10.5a1 1 0 0 0 1 .8h8.3a1 1 0 0 0 1-.8L19.5 8H6"/><circle cx="9.5" cy="19" r="1.3"/><circle cx="16.5" cy="19" r="1.3"/></svg>';
 var ICO_USER = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.8 3.7-6 7.5-6s6.7 2.2 7.5 6"/></svg>';
-$("mbtn").innerHTML = ICO_MENU + '<span>Menu</span>';
+var ICO_BELL = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.6 2H4.4z"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/></svg>';
+var ICO_INFO = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 11v5.2"/><circle cx="12" cy="7.8" r=".5" fill="currentColor"/></svg>';
+var ICO_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+$("mbtn").innerHTML = ICO_MENU;
 var VAN ='<svg class="van" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M1 3h16v11H1zM17 7h6l5 4v3H17z"/><circle cx="7" cy="16" r="2.4" fill="currentColor"/><circle cx="23" cy="16" r="2.4" fill="currentColor"/></svg>';
-var NOTE = '<div class="note"><b>Informazioni importanti</b>I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.</div>';
+var INFO_TXT = "I prodotti presentati in questo sito sono indicati esclusivamente con il nome del modello e hanno finalità puramente espositiva. Ciascun modello è disponibile in numerosi colori e varianti, non tutti raffigurati o elencati. Per conoscere colori, taglie e disponibilità effettive, vi invitiamo a contattarci direttamente su WhatsApp prima di completare l’ordine. Il sito non gestisce pagamenti: ogni ordine viene confermato e concordato in chat.";
 
 // ---------- schermate ----------
 function R() {
@@ -65,7 +117,7 @@ function R() {
     return;
   }
   a.innerHTML = '<header><div class="hl"></div><h1>' + esc(SHOP_NAME) + '</h1>' +
-    '<div class="hr">' + (S.admin ? '' : '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>') + '</div></header>' +
+    '<div class="hr">' + '<button class="ic" onclick="openAccount()" aria-label="Account">' + ICO_USER + '</button>' + '</div></header>' +
     (S.view === "admin" && S.admin ? admin() : shopH());
 }
 function startIntro() {
@@ -94,7 +146,7 @@ function shopH() {
   if (!S.ready) return '<p class="m" style="text-align:center">Caricamento…</p>';
   var c = S.cats.filter(function (x) { return x.id === S.cat; })[0];
   var list = c ? S.shoes.filter(function (s) { return c.ids.indexOf(s.id) > -1; }) : S.shoes;
-  var h = adsH() + '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>' + NOTE;
+  var h = qaH() + '<div class="ct">' + (c ? esc(c.name) : "Tutto") + '</div>';
   if (!list.length) return h + '<p class="m" style="text-align:center">Nessuna scarpa qui per ora.</p>';
   return h + '<div class="grid">' + list.map(function (s, i) {
     return '<div class="card ' + (s.avail ? "" : "out") + '" style="animation-delay:' + (i * 40) + 'ms"><div class="ph" onclick="this.parentNode.classList.toggle(\'ex\')">' + (s.photo ? '<img src="' + s.photo + '" alt="">' : "") + '</div>' +
@@ -125,13 +177,32 @@ function admin() {
   return adAdmin() + f + m + (l || '<p class="m">Nessuna scarpa. Aggiungine una sopra.</p>');
 }
 
-// ---------- annunci in home ----------
-function adsH() {
-  var l = S.ads.filter(adLive);
-  return l.map(function (a, i) {
-    return '<div class="ad" style="animation-delay:' + (i * 40) + 'ms">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : '') +
-      (a.title || a.text ? '<div class="adb">' + (a.title ? '<b>' + esc(a.title) + '</b>' : '') + (a.text ? '<p>' + esc(a.text).replace(/\n/g, "<br>") + '</p>' : '') + '</div>' : '') + '</div>';
-  }).join("");
+// ---------- notifiche (bacheca avvisi) e info ----------
+function seen() { try { return JSON.parse(localStorage.getItem("seenAds")) || []; } catch (e) { return []; } }
+function unread() { var k = seen(); return S.ads.filter(adLive).filter(function (a) { return k.indexOf(a.id) < 0; }); }
+function qaH() {
+  var n = unread().length;
+  return '<div class="qa"><button class="qb' + (n ? " ring" : "") + '" onclick="openNotif()"><span class="bw">' + ICO_BELL + (n ? '<b class="nb">' + (n > 9 ? "9+" : n) + '</b>' : "") + '</span><span>Notifiche</span></button>' +
+    '<button class="qb" onclick="openInfo()"><span class="bw">' + ICO_INFO + '</span><span>Info</span></button></div>';
+}
+function shHead(t, ico) { return '<div class="shh"><b class="sht">' + (ico || "") + esc(t) + '</b><button class="l" onclick="closeAll()">Chiudi</button></div>'; }
+function openNotif() { sfx("open"); S.sh = "n"; notifR(); document.body.classList.add("so"); }
+function notifR() {
+  var l = S.ads.filter(adLive), k = seen();
+  $("sheet").innerHTML = shHead("Notifiche", ICO_BELL) + '<div class="m" style="margin:2px 0 12px">Bacheca degli avvisi</div>' +
+    (l.length ? '<div class="nl">' + l.map(function (a) {
+      var nw = k.indexOf(a.id) < 0;
+      return '<div class="ad">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="">' : '') + '<div class="adb"><div class="dt">' + (nw ? '<i class="nw"></i>' : '') + (a.created ? fmtD(a.created) : "") + '</div>' +
+        (a.title ? '<b>' + esc(a.title) + '</b>' : '') + (a.text ? '<p>' + esc(a.text).replace(/\n/g, "<br>") + '</p>' : '') + '</div></div>';
+    }).join("") + '</div>' : '<p class="m" style="text-align:center;padding:26px 0">Nessuna notifica per ora.</p>');
+  try { localStorage.setItem("seenAds", JSON.stringify(l.map(function (a) { return a.id; }))); } catch (e) {}
+  Array.prototype.forEach.call(document.querySelectorAll(".nb"), function (b) { b.remove(); });   // il pallino rosso sparisce
+  Array.prototype.forEach.call(document.querySelectorAll(".ring"), function (b) { b.classList.remove("ring"); });
+}
+function openInfo() {
+  sfx("open"); S.sh = "i";
+  $("sheet").innerHTML = shHead("Informazioni importanti", ICO_INFO) + '<p class="info">' + INFO_TXT + '</p>';
+  document.body.classList.add("so");
 }
 var FIG = {   // omino e donnina come sulle porte dei bagni
   uomo: '<svg viewBox="0 0 24 48" fill="currentColor"><circle cx="12" cy="6" r="4"/><rect x="7" y="12" width="10" height="17" rx="2"/><rect x="3" y="12" width="3" height="15" rx="1.5"/><rect x="18" y="12" width="3" height="15" rx="1.5"/><rect x="8" y="27" width="3.4" height="17" rx="1.7"/><rect x="12.6" y="27" width="3.4" height="17" rx="1.7"/></svg>',
@@ -182,11 +253,11 @@ function pickAd(inp) {
 function saveAd() {
   var d = adDraft(); adSync();
   var t = d.title.trim(), x = d.text.trim();
-  if (!t && !x && !d.photo) { alert("Inserisci almeno un titolo, un testo o una foto"); return; }
+  if (!t && !x && !d.photo) { warn("Inserisci almeno un titolo, un testo o una foto"); return; }
   var until = d.dur === "keep" ? ((adOf(S.adEdit) || {}).until || 0) : d.dur === "0" ? 0 : Date.now() + Number(d.dur) * 864e5;
   var o = {title:t, text:x, photo:d.photo || "", on:d.on, until:until};
   var op = S.adEdit ? db.collection("ads").doc(S.adEdit).update(o) : db.collection("ads").add(Object.assign(o, {created:Date.now()}));
-  op.then(function () { S.adEdit = null; S.adf = null; R(); toast("Annuncio salvato"); }).catch(function (e) { alert("Errore: " + e.message); });
+  op.then(function () { S.adEdit = null; S.adf = null; R(); toast("Annuncio salvato"); }).catch(function (e) { warn("Errore: " + e.message); });
 }
 function adEd(id) { S.adEdit = id; S.adf = null; R(); window.scrollTo(0, 0); }
 function adDel(id) { if (confirm("Eliminare questo annuncio?")) { if (S.adEdit === id) { S.adEdit = null; S.adf = null; } db.collection("ads").doc(id).delete(); } }
@@ -195,17 +266,20 @@ function adTog(id) { db.collection("ads").doc(id).update({on:adOf(id).on === fal
 // ---------- menu laterale e carrello ----------
 function menuR() {
   var items = [{id:"all", name:"Tutto"}].concat(S.cats);
-  $("menu").innerHTML = '<div class="logo">' + esc(SHOP_NAME) + '</div>' +
+  $("menu").innerHTML = '<div class="mh"><div class="logo">' + esc(SHOP_NAME) + '</div><button class="ic" onclick="closeAll()" aria-label="Chiudi">' + ICO_X + '</button></div>' +
     items.map(function (c) { return '<button class="mi ' + (S.cat === c.id && S.view === "shop" ? "on" : "") + '" onclick="pickCat(\'' + c.id + '\')">' + esc(c.name) + '</button>'; }).join("") +
-    '<div class="mf">' + (S.admin ? '<button class="mi" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Torna al negozio") + '</button>' : '') +
-    '<button class="mi" onclick="logout()">Esci</button></div>' +
+    (S.admin ? '<div class="mf"><button class="mi" onclick="go(\'' + (S.view === "shop" ? "admin" : "shop") + '\')">' + (S.view === "shop" ? "Dashboard" : "Torna al negozio") + '</button></div>' : '') +
     '<div class="soc"><a href="https://instagram.com/' + encodeURIComponent(typeof SHOP_INSTAGRAM === "string" ? SHOP_INSTAGRAM : "") + '" target="_blank" rel="noopener" aria-label="Instagram">' + ICO_IG + '</a>' +
     '<a href="https://wa.me/' + SHOP_PHONE + '" target="_blank" rel="noopener" aria-label="WhatsApp">' + ICO_WA + '</a></div>';
 }
-function pickCat(id) { S.cat = id; S.view = "shop"; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
-function openM() { document.body.classList.add("mo"); }
-function openC() { document.body.classList.add("co"); }
-function closeAll() { document.body.classList.remove("mo", "co", "so"); }
+function pickCat(id) { S.cat = id; S.view = "shop"; closeAll(true); menuR(); R(); window.scrollTo(0, 0); }
+function openM() { sfx("open"); document.body.classList.add("mo"); }
+function openC() { sfx("open"); document.body.classList.add("co"); }
+function closeAll(q) {
+  var b = document.body.classList;
+  if (q !== true && (b.contains("mo") || b.contains("co") || b.contains("so"))) sfx("close");
+  b.remove("mo", "co", "so"); S.sh = "";
+}
 
 function cartR() {
   var tot = 0, lines = [], rows = "";
@@ -235,9 +309,10 @@ function add(id, btn) {
 function addItem(id, size) {
   var f = S.cart.filter(function (c) { return c.id === id && c.size === size; })[0];
   if (f) f.q++; else S.cart.push({id:id, size:size, q:1});
-  cartR(); toast("Aggiunto al carrello");
+  cartR(); sfx("add"); toast("Aggiunto al carrello", true);
 }
 function openSheet(id, sz) {
+  sfx("open"); S.sh = "";
   S.pend = {id:id, size:""};
   $("sheet").innerHTML = '<div class="shh"><b>' + esc(shoe(id).name) + '</b><button class="l" onclick="closeAll()">Chiudi</button></div><div class="m">Scegli la taglia</div>' +
     '<div class="sizes">' + sz.map(function (x) { return '<button class="sq" onclick="pickSz(this,\'' + esc(x) + '\')">' + esc(x) + '</button>'; }).join("") + '</div>' +
@@ -245,13 +320,13 @@ function openSheet(id, sz) {
   document.body.classList.add("so");
 }
 function pickSz(el, v) {
-  S.pend.size = v; var p = el.parentNode.children;
+  sfx("pick"); S.pend.size = v; var p = el.parentNode.children;
   for (var i = 0; i < p.length; i++) p[i].classList.remove("on");
   el.classList.add("on"); $("sgo").disabled = false;
 }
 function confirmAdd(btn) {
   if (!S.pend || !S.pend.size) return;
-  addItem(S.pend.id, S.pend.size); fly(btn, S.pend.id); setTimeout(closeAll, 800);
+  addItem(S.pend.id, S.pend.size); fly(btn, S.pend.id); setTimeout(function () { closeAll(true); }, 800);
 }
 function fly(b, id) {
   b.classList.remove("run"); void b.offsetWidth; b.classList.add("run");
@@ -266,23 +341,28 @@ function fly(b, id) {
     p.remove(); t.animate([{transform:"scale(1)"}, {transform:"scale(1.12)"}, {transform:"scale(1)"}], {duration:350});
     var g = $("bd"); if (g) { g.classList.remove("b"); void g.offsetWidth; g.classList.add("b"); } };
 }
-function qty(i, d) { S.cart[i].q += d; if (S.cart[i].q < 1) S.cart.splice(i, 1); cartR(); R(); }
-function toast(t) { var e = $("toast"); e.textContent = t; e.className = "s"; clearTimeout(toast.t); toast.t = setTimeout(function () { e.className = ""; }, 1800); }
+function qty(i, d) { sfx(d > 0 ? "pick" : "minus"); S.cart[i].q += d; if (S.cart[i].q < 1) S.cart.splice(i, 1); cartR(); R(); }
+function toast(t, q) { if (!q) sfx("ok"); var e = $("toast"); e.textContent = t; e.className = "s"; clearTimeout(toast.t); toast.t = setTimeout(function () { e.className = ""; }, 1800); }
 
 // ---------- account ----------
 function openAccount() {
-  $("sheet").innerHTML = '<div class="shh"><b>Il tuo account</b><button class="l" onclick="closeAll()">Chiudi</button></div><div class="m" style="margin-bottom:14px">Modifica i tuoi dati</div>' +
-    '<label>Nome</label><input id="an" value="' + esc(S.user.first) + '"><label>Numero di telefono</label><input id="ap" type="tel" value="' + esc(S.user.phone) + '">' + genH("ag", S.user.gender, "") +
-    '<button class="pri" style="width:100%" onclick="saveAccount()">Salva</button>';
+  sfx("open"); S.sh = "a";
+  var snd = '<div class="snd"><span>Suoni</span><button class="sm" id="sndb" onclick="toggleSnd()">' + (SND.on ? "Attivi" : "Disattivati") + '</button></div>';
+  var out = '<button class="lo" onclick="logout()">Esci dall’account</button>';
+  $("sheet").innerHTML = shHead("Il tuo account") + (S.admin
+    ? '<div class="m" style="margin-bottom:6px">Accesso gestore</div>' + snd + out
+    : '<div class="m" style="margin-bottom:14px">Modifica i tuoi dati</div>' +
+      '<label>Nome</label><input id="an" value="' + esc(S.user.first) + '"><label>Numero di telefono</label><input id="ap" type="tel" value="' + esc(S.user.phone) + '">' + genH("ag", S.user.gender, "") +
+      '<button class="pri" style="width:100%" onclick="saveAccount()">Salva</button>' + snd + out);
   document.body.classList.add("so");
 }
 function saveAccount() {
   var f = $("an").value.trim(), p = $("ap").value.replace(/[\s\-+]/g, ""), g = (document.querySelector('input[name="ag"]:checked') || {}).value || S.user.gender || "";
-  if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
+  if (!f || p.length < 8) { warn("Inserisci nome e un numero valido"); return; }
   S.user = {first:f, last:"", phone:p, gender:g};
   try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
   db.collection("clients").doc(p).set({first:f, last:"", phone:p, gender:g, last_login:Date.now()}).catch(function () {});
-  closeAll(); R(); cartR(); toast("Dati aggiornati");
+  closeAll(true); R(); cartR(); toast("Dati aggiornati");
 }
 
 // ---------- accesso ----------
@@ -361,18 +441,18 @@ function applyGender() {
 }
 function login() {
   var f = $("fn").value.trim(), l = "", p = $("ph").value.replace(/[\s\-+]/g, ""), g = S.g || (document.querySelector('input[name="gn"]:checked') || {}).value || "";
-  if (!f || p.length < 8) { alert("Inserisci nome e un numero valido"); return; }
-  if (!g) { alert("Seleziona uomo o donna"); return; }
+  if (!f || p.length < 8) { warn("Inserisci nome e un numero valido"); return; }
+  if (!g) { warn("Seleziona uomo o donna"); return; }
   S.user = {first:f, last:l, phone:p, gender:g};
   try { localStorage.setItem("user", JSON.stringify(S.user)); } catch (e) {}
   db.collection("clients").doc(p).set({first:f, last:l, phone:p, gender:g, last_login:Date.now()}).catch(function () {});
-  S.view = "shop"; S.cat = "all"; S.catSet = false; applyGender(); menuR(); R(); cartR(); hi();
+  S.view = "shop"; S.cat = "all"; S.catSet = false; applyGender(); menuR(); R(); cartR(); hi(); sfx("ok");
 }
 function alogin() {
-  auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value).then(function () { S.view = "admin"; location.hash = ""; hi(); }).catch(function () { alert("Credenziali non valide"); });
+  auth.signInWithEmailAndPassword($("em").value.trim(), $("pw").value).then(function () { S.view = "admin"; location.hash = ""; hi(); sfx("ok"); }).catch(function () { warn("Credenziali non valide"); });
 }
-function logout() { S.user = null; S.admin = false; S.view = "shop"; S.cat = "all"; S.catSet = false; S.g = ""; try { localStorage.removeItem("user"); } catch (e) {} auth.signOut(); closeAll(); R(); }
-function go(v) { S.view = v; S.edit = null; S.photo = ""; S.adEdit = null; S.adf = null; closeAll(); menuR(); R(); window.scrollTo(0, 0); }
+function logout() { S.user = null; S.admin = false; S.view = "shop"; S.cat = "all"; S.catSet = false; S.g = ""; try { localStorage.removeItem("user"); } catch (e) {} auth.signOut(); closeAll(true); sfx("bye"); R(); }
+function go(v) { S.view = v; S.edit = null; S.photo = ""; S.adEdit = null; S.adf = null; closeAll(true); menuR(); R(); window.scrollTo(0, 0); }
 
 // ---------- dashboard: prodotti ----------
 function pick(inp) {
@@ -386,10 +466,10 @@ function pick(inp) {
 }
 function save() {
   var n = $("nm").value.trim(), p = parseFloat($("pr").value);
-  if (!n || isNaN(p)) { alert("Nome e prezzo obbligatori"); return; }
+  if (!n || isNaN(p)) { warn("Nome e prezzo obbligatori"); return; }
   var o = {name:n, price:p, sizes:$("sz").value.trim(), avail:$("av").checked, photo:S.photo};
   var op = S.edit ? db.collection("shoes").doc(S.edit).update(o) : db.collection("shoes").add(Object.assign(o, {created:Date.now()}));
-  op.then(function () { S.edit = null; S.photo = ""; R(); toast("Salvato"); }).catch(function (e) { alert("Errore: " + e.message); });
+  op.then(function () { S.edit = null; S.photo = ""; R(); toast("Salvato"); }).catch(function (e) { warn("Errore: " + e.message); });
 }
 function ed(id) { S.edit = id; S.photo = shoe(id).photo || ""; R(); window.scrollTo(0, 0); }
 function del(id) { if (confirm("Eliminare questa scarpa?")) db.collection("shoes").doc(id).delete(); }
