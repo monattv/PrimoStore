@@ -7,4 +7,4 @@ var firebaseConfig = {
 };
 var SHOP_PHONE = "393518521113"; // WhatsApp per gli ordini (prefisso senza +)
 var SHOP_NAME = "Primo Store";
-var SHOP_INSTAGRAM = "nomeutente"; // username Instagram del negozio, senza @ (es. "primostore")
+var SHOP_INSTAGRAM = "primostore.terrasini"; // username Instagram del negozio, senza @ (es. "primostore")
