@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- contenuti pubblici del negozio: lettura libera, scrittura solo gestore ----------
+    match /shoes/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+      // foto extra del prodotto (una per documento, nessun limite di numero)
+      match /imgs/{img} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+    }
+    match /menu/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /ads/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /info/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /sales/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /reviews/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /notifs/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // coupon: i clienti possono controllare un codice che conoscono, ma solo il gestore può vedere l'elenco
+    match /coupons/{id} {
+      allow get: if true;
+      allow list, write: if request.auth != null;
+    }
+
+    // ---------- clienti ----------
+    // chi si registra/accede può cercare il proprio numero; solo il gestore vede l'elenco completo.
+    // orderIds può solo crescere (un cliente non può cancellare gli ordini collegati a un altro).
+    match /clients/{id} {
+      allow create: if true;
+      allow update: if !('orderIds' in request.resource.data)
+                    || !('orderIds' in resource.data)
+                    || request.resource.data.orderIds.hasAll(resource.data.orderIds);
+      allow get: if true;
+      allow list: if request.auth != null;
+    }
+
+    // ---------- coupon personale -10% (link segreto) ----------
+    // config/reward contiene la chiave del link: i clienti non possono leggerla, ma le regole sì (get).
+    match /config/{id} {
+      allow read, write: if request.auth != null;
+    }
+    // rewards/<chiave>_<telefono>: si può leggere o creare solo conoscendo la chiave del link e,
+    // per creare/rinnovare, avendo un ordine (proof) intestato a quel telefono.
+    match /rewards/{id} {
+      function keyOk() {
+        return id.split('_')[0] == get(/databases/$(database)/documents/config/reward).data.key;
+      }
+      function hasOrder(owner, oid) {
+        return exists(/databases/$(database)/documents/orders/$(oid))
+          && get(/databases/$(database)/documents/orders/$(oid)).data.clientId == owner;
+      }
+      function markUsed() {
+        return resource.data.used == false && request.resource.data.used == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['used', 'usedAt', 'usedOrder'])
+          && getAfter(/databases/$(database)/documents/orders/$(request.resource.data.usedOrder)).data.clientId == resource.data.owner;
+      }
+      function renew() {
+        return resource.data.used == true && request.resource.data.used == false
+          && request.resource.data.cycle == resource.data.cycle + 1
+          && request.resource.data.type == 'pct' && request.resource.data.value == 10
+          && hasOrder(resource.data.owner, request.resource.data.proof);
+      }
+      allow get: if keyOk();
+      allow list: if request.auth != null;
+      allow write: if request.auth != null;
+      allow create: if keyOk()
+        && request.resource.data.owner == id.split('_')[1]
+        && request.resource.data.used == false && request.resource.data.type == 'pct'
+        && request.resource.data.value == 10 && request.resource.data.cycle == 1
+        && hasOrder(id.split('_')[1], request.resource.data.proof);
+      allow update: if keyOk() && request.resource.data.owner == resource.data.owner && (markUsed() || renew());
+    }
+
+    // ---------- ordini ----------
+    // Ogni ordine ha un id casuale di 20 caratteri: chi lo conosce (il cliente che l'ha creato) può leggerlo.
+    // L'elenco completo lo vede solo il gestore.
+    match /orders/{id} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null || validNewOrder();
+      allow update: if request.auth != null || customerUpdate();
+      allow delete: if request.auth != null;
+    }
+    // contatore dei codici PS-000001...: può solo aumentare di 1 alla volta
+    match /counters/{id} {
+      allow get: if true;
+      allow create: if id == 'orders' && (request.auth != null || request.resource.data.n == 1);
+      allow update: if id == 'orders' && (request.auth != null || request.resource.data.n == resource.data.n + 1);
+      allow delete: if false;
+    }
+
+    function onlyKeys(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    // un cliente può creare solo ordini "Da Pagare" il cui numero coincide con il contatore appena aumentato
+    function validNewOrder() {
+      let d = request.resource.data;
+      return d.status == 'Da Pagare'
+        && d.num is int
+        && d.num == getAfter(/databases/$(database)/documents/counters/orders).data.n
+        && d.total is number && d.total >= 0
+        && d.items is list && d.items.size() > 0 && d.items.size() <= 30
+        && d.first is string && d.first.size() > 0 && d.first.size() < 80
+        && d.last is string && d.last.size() > 0 && d.last.size() < 80
+        && d.phone is string && d.phone.size() >= 8 && d.phone.size() < 20
+        && d.address is map && d.address.street is string
+        && d.deleted == false;
+    }
+    // un cliente può solo: annullare un ordine "Da Pagare", oppure chiedere l'annullamento di uno "Da Pagare/Pagato/Ordinato"
+    function customerUpdate() {
+      let n = request.resource.data;
+      let o = resource.data;
+      return onlyKeys(['status', 'history', 'updatedAt', 'cancel'])
+        && ((o.status == 'Da Pagare' && n.status == 'Annullato')
+         || (o.status in ['Da Pagare', 'Pagato', 'Ordinato'] && n.status == o.status && n.cancel.requested == true));
+    }
+  }
+}
